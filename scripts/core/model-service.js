@@ -94,18 +94,19 @@ class ModelService {
 
   /**
    * Perform the actual fetch operation
-   * @param {string} apiKey - API key
+   * @param {string} cacheKey - "provider:key", used only to tag the cache
    * @returns {Promise<string[]>} Array of model IDs
    * @private
    */
-  async _doFetch(apiKey) {
+  async _doFetch(cacheKey) {
     const { provider, apiKey: key } = getAIConfig();
-    if (provider === PROVIDERS.ANTHROPIC) return this._doFetchAnthropic(apiKey, key);
+    if (provider === PROVIDERS.ANTHROPIC) return this._doFetchAnthropic(cacheKey, key);
     try {
       const modelsURL = OPENROUTER_BASE_URL.replace(/\/+$/, '') + '/models';
       const headers = { 'Content-Type': 'application/json' };
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+      // The bare key, never the cache tag: "Bearer openrouter:sk-or-..." is rejected (0.9.0 bug).
+      if (key) {
+        headers['Authorization'] = `Bearer ${key}`;
       }
 
       const response = await fetch(modelsURL, { method: 'GET', headers });
@@ -120,7 +121,7 @@ class ModelService {
 
       // Update cache
       this.#cachedModels = models;
-      this.#cachedApiKey = apiKey;
+      this.#cachedApiKey = cacheKey;
 
       logger.debug(`Fetched ${models.length} models from endpoint`);
       return models;

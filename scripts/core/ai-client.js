@@ -419,8 +419,8 @@ export class AIClient {
       const headers = {
         'Content-Type': 'application/json',
         // OpenRouter app attribution (recommended for app identification/rankings)
-        'HTTP-Referer': 'https://github.com/Ebonhawk3829/simulacrum-foundry',
-        'X-Title': 'Simulacrum (Ebonhawk fork)',
+        'HTTP-Referer': 'https://github.com/liquidsn8ke/simulacrum-foundry',
+        'X-Title': 'Simulacrum PF2e',
         ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
       };
 

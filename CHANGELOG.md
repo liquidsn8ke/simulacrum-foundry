@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-11-10
+
+### Fixed
+
+- With the OpenRouter provider, the sidebar's model dropdown was empty: the model list request
+  sent the internal cache tag (`openrouter:<key>`) as the API key, which OpenRouter rejects.
+  Chat requests were not affected. Regression test: `tests/unit/model-list-auth.test.mjs`.
+- OpenRouter attribution headers name this fork.
+
 ## [0.9.0] - 2026-11-10
 
 The PF2e builder. The agent now builds Pathfinder Second Edition documents and talks to Claude
