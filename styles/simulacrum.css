@@ -2098,3 +2098,121 @@ section[data-tab="simulacrum"] .discord-btn:hover {
 .simulacrum-message-edit .message-edit-actions button {
   cursor: pointer;
 }
+/* ---------------------------------------- */
+/*  Reading surface: legibility (PF2e)      */
+/* ---------------------------------------- */
+/*
+ * Build plans arrive as dense stat-block tables full of field names and roll chips.
+ * These rules make them readable on the dark message background:
+ * - a larger body size and line height, with prose capped at a readable measure;
+ * - tables with a header band, zebra rows, roomy cells and a bold first column;
+ * - inline code as a distinct monospace pill;
+ * - pf2e roll chips (@Check / @Damage / @UUID / templates) restyled dark. pf2e paints
+ *   them from --content-link-* variables meant for light chat cards, which combined
+ *   with this module's link colour made "@Check" chips light-on-light and unreadable.
+ * Scoped like the heading rules above (doubly-scoped + !important where UI-overhaul
+ * modules compete), with a fallback selector for the popout.
+ */
+#sidebar #simulacrum .chat-message .message-content,
+#simulacrum .chat-message .message-content {
+  font-size: var(--font-size-14, 14px) !important;
+  line-height: 1.55 !important;
+  color: #f2ead3;
+  --content-link-background: rgba(255, 244, 194, 0.08);
+  --content-link-border-color: rgba(255, 244, 194, 0.35);
+  --content-link-text-color: #fff4c2;
+}
+
+#simulacrum .chat-message .message-content :is(p, li, h1, h2, h3, h4, h5, h6, blockquote) {
+  max-width: 80ch;
+}
+
+#simulacrum .chat-message .message-content :is(strong, b) {
+  color: #ffffff;
+}
+
+/* Tables: stat-block plans */
+#simulacrum .chat-message .message-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgba(255, 244, 194, 0.18);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.95em;
+}
+
+#simulacrum .chat-message .message-content :is(th, td) {
+  border: 0;
+  padding: 0.45em 0.75em;
+  vertical-align: top;
+  text-align: left;
+}
+
+#simulacrum .chat-message .message-content th {
+  background: rgba(255, 244, 194, 0.1);
+  border-bottom: 1px solid rgba(255, 244, 194, 0.28);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+#simulacrum .chat-message .message-content tbody tr + tr td {
+  border-top: 1px solid rgba(255, 244, 194, 0.07);
+}
+
+#simulacrum .chat-message .message-content tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+#simulacrum .chat-message .message-content tbody tr:hover td {
+  background: rgba(156, 199, 255, 0.08);
+}
+
+#simulacrum .chat-message .message-content td:first-child {
+  color: #ffffff;
+  font-weight: 600;
+  width: 30%;
+}
+
+/* Inline code: field names, rule-element keys, selectors */
+#simulacrum .chat-message .message-content :not(pre) > code {
+  font-family: var(--font-mono, 'Consolas', 'Courier New', monospace) !important;
+  font-size: 0.88em;
+  color: #cfe0ff;
+  background: rgba(156, 199, 255, 0.1);
+  border: 1px solid rgba(156, 199, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+}
+
+/* pf2e roll chips and document links */
+#simulacrum
+  .chat-message
+  .message-content
+  :is(a.content-link, a.inline-roll, a.inline-check, span[data-pf2-check], a.effect-area) {
+  background: rgba(255, 244, 194, 0.08) !important;
+  border: 1px solid rgba(255, 244, 194, 0.35) !important;
+  border-radius: 4px;
+  color: #fff4c2 !important;
+  text-decoration: none !important;
+  padding: 0 0.4em;
+  white-space: nowrap;
+}
+
+#simulacrum
+  .chat-message
+  .message-content
+  :is(a.content-link, a.inline-roll, a.inline-check, span[data-pf2-check], a.effect-area):hover {
+  background: rgba(255, 244, 194, 0.18) !important;
+  border-color: rgba(255, 244, 194, 0.6) !important;
+}
+
+#simulacrum
+  .chat-message
+  .message-content
+  :is(a.content-link, a.inline-roll, a.inline-check, span[data-pf2-check], a.effect-area)
+  :is(i, span) {
+  color: inherit !important;
+  background: transparent !important;
+}

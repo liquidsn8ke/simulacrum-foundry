@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-11-10
+
+### Changed
+
+- Easier-to-read chat: larger body text and line height, prose capped at a readable width,
+  stat-block tables with a header band, zebra rows, roomier cells and a bold first column, and
+  inline code (field names, rule-element keys) shown as distinct pills.
+
+### Fixed
+
+- pf2e roll chips (`@Check`, `@Damage`, `@UUID`, templates) in assistant messages were
+  light-on-light and unreadable; they now use one dark, readable chip style.
+
 ## [0.9.1] - 2026-11-10
 
 ### Fixed
