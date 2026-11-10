@@ -71,7 +71,7 @@ async function build() {
         const stagingDir = prepareStaging(sourceDir);
 
         // Use official Foundry CLI
-        const cmd = `npx fvtt package pack --type Module --id simulacrum -n ${outputName} --in "${stagingDir}" --out "${join(ROOT, 'packs')}" -v`;
+        const cmd = `npx fvtt package pack --type Module --id simulacrum-pf2e -n ${outputName} --in "${stagingDir}" --out "${join(ROOT, 'packs')}" -v`;
 
         try {
             const result = execSync(cmd, {

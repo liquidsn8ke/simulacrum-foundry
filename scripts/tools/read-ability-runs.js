@@ -16,7 +16,7 @@ export class ReadAbilityRunsTool extends BaseTool {
   constructor() {
     super(
       'read_ability_runs',
-      'Read what was recorded when a built ability was used in play: the chat output and its rolls, hit point and condition changes on the actor and its targets, and any errors. Read-only. Compare this against what you intended and against what the user tells you they saw, then decide what to change. If nothing has been recorded yet, the user has not used the ability — ask them to.'
+      'Read what was recorded when a built creature or item was used in play: each chat message it produced, with the roll context pf2e attached (check type, outcome, DC, notes shown, relevant roll options such as inflicts:* and target conditions), the rolls and their dice, and applied damage. Pass the actorUuid of a built creature (records every roll it makes or receives) or the itemUuid of a built item. Read-only. Compare this against what you intended and against what the user tells you they saw, then decide what to change. If nothing has been recorded yet, it has not been used — ask the GM to.'
     );
     this.requiresConfirmation = false; // read-only
     this.schema = {
@@ -24,7 +24,7 @@ export class ReadAbilityRunsTool extends BaseTool {
       properties: {
         itemUuid: {
           type: 'string',
-          description: 'The itemUuid returned by build_ability.',
+          description: 'The actorUuid returned by pf2e_build_creature or the itemUuid returned by pf2e_build_item.',
         },
         limit: {
           type: 'number',
@@ -56,7 +56,7 @@ export class ReadAbilityRunsTool extends BaseTool {
         {
           ok: false,
           error: `No item found for "${params.itemUuid}". It may have been deleted since the build.`,
-          next: 'Call build_ability again to rebuild it.',
+          next: 'Rebuild it with pf2e_build_creature or pf2e_build_item.',
         },
         'Item not found',
         'ITEM_NOT_FOUND'
@@ -69,7 +69,7 @@ export class ReadAbilityRunsTool extends BaseTool {
         {
           ok: false,
           error: `"${item.name}" was not built by this module, or was built before the record existed, so nothing is being recorded for it.`,
-          next: 'Rebuild it with build_ability if you want its use recorded.',
+          next: 'Rebuild it with pf2e_build_creature or pf2e_build_item if you want its use recorded.',
         },
         'Not a tracked ability',
         'NOT_TRACKED'

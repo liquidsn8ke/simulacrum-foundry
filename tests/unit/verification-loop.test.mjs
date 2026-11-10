@@ -228,7 +228,7 @@ test('a deleted item is reported rather than throwing', async () => {
   const tool = new ReadAbilityRunsTool();
   const result = await withFoundry([], () => tool.execute({ itemUuid: 'Actor.gone.Item.gone' }));
   assert.equal(result.error.type, 'ITEM_NOT_FOUND');
-  assert.match(JSON.parse(result.content).next, /build_ability/);
+  assert.match(JSON.parse(result.content).next, /pf2e_build_creature or pf2e_build_item/);
 });
 
 test('limit returns only the most recent runs', async () => {

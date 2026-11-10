@@ -79,7 +79,7 @@ export async function markNeedsTesting(item, { intent, expect, note } = {}) {
     status: 'pending',
     markedAt: new Date().toISOString(),
     markedBy: game?.user?.id ?? null,
-    identifier: item?.system?.identifier ?? null,
+    identifier: item?.system?.slug ?? item?.system?.identifier ?? null,
     intent: intent ?? null,
     expect: expect ?? null,
     note: note ?? null,

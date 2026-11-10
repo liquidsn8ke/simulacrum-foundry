@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-11-10
+
+The PF2e builder. The agent now builds Pathfinder Second Edition documents and talks to Claude
+directly.
+
+### Added
+
+- **Anthropic provider** (default): requests go straight to the Claude Messages API through the
+  official SDK (`@anthropic-ai/sdk` 1.2.0, bundled as `scripts/vendor/anthropic-sdk.js`). Streams,
+  adaptive thinking at a configurable effort, prompt caching of tools and system prompt, optional
+  server-side refusal fallback. Claude's content blocks are stored with each reply and replayed
+  unchanged; requests ask the API to drop reasoning whose history the harness edited
+  (`prefix_mismatch_behavior: "drop_block"`) instead of failing. Tool calls from a cut-off or
+  refused turn are never run. New settings: AI Provider, Anthropic API Key, Claude Effort, Claude
+  Refusal Fallback. OpenRouter remains available as a provider.
+- **PF2e tools:** `pf2e_build_creature` (whole NPC from a spec; troops, glossary abilities with
+  their radius/DC filled, spellcasting, gear), `pf2e_build_item` (any item type, from scratch or
+  copied from an official item), `pf2e_lookup`, `pf2e_validate` (ignored rule elements with the
+  system's reason, broken links, bad formulas, empty DCs, dangling on-hit effects), and
+  `pf2e_benchmark` (percentiles among official creatures of the level, computed live).
+- **PF2e roll recorder:** rolls made or received by a built creature or item are recorded with
+  pf2e's roll context (outcome, DC, notes, roll options) for `read_ability_runs`.
+- **World report** in the system prompt: game system version and the active / inactive modules,
+  read live, so the agent relies only on active modules.
+- **PF2e reference** (`reference/`): NPC fields, item and hazard fields, every rule-element key
+  with real examples generated from the pf2e compendia, enrichers, automation patterns, module
+  notes, world conventions. `read_reference` can also read any active module's README.
+
+### Changed
+
+- The system prompt is rewritten for PF2e: official content is the automation bar; rule elements,
+  then active modules, then scripts.
+
+### Removed
+
+- The dnd5e layer: `build_ability`, `preview_spec`, the dnd5e builders and recorder, and the
+  dnd5e / midi-qol / DAE / CAT / CPR / Simple Quest reference.
+
 ## [0.8.0] - 2026-11-10
 
 First release of the PF2e fork. This release changes the module's identity and release pipeline

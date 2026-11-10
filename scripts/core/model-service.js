@@ -4,8 +4,9 @@
  */
 
 import { createLogger } from '../utils/logger.js';
-import { OPENROUTER_BASE_URL } from './ai-client.js';
+import { OPENROUTER_BASE_URL, PROVIDERS, createAnthropicClient } from './ai-client.js';
 import { MODULE_ID } from '../module-id.js';
+import { getAIConfig } from './ai-config.js';
 
 const logger = createLogger('ModelService');
 
@@ -28,6 +29,7 @@ export const DEFAULT_CONTEXT_LIMIT = 32000;
  * Supports both flat and nested paths (dot notation)
  */
 const CONTEXT_LIMIT_KEYS = [
+  'max_input_tokens', // Anthropic Models API
   'context_length', // OpenRouter
   'context_window', // Some providers
   'inputTokenLimit', // Gemini
@@ -65,7 +67,9 @@ class ModelService {
    * @returns {Promise<string[]>} Array of model IDs
    */
   async fetchModels(forceRefresh = false) {
-    const apiKey = game.settings.get(MODULE_ID, 'apiKey');
+    const { provider, apiKey: key } = getAIConfig();
+    // The cache is keyed by provider and key, so switching either refetches.
+    const apiKey = `${provider}:${key}`;
 
     // Check if cache is valid
     if (!forceRefresh && this.#cachedModels.length > 0 && this.#cachedApiKey === apiKey) {
@@ -95,6 +99,8 @@ class ModelService {
    * @private
    */
   async _doFetch(apiKey) {
+    const { provider, apiKey: key } = getAIConfig();
+    if (provider === PROVIDERS.ANTHROPIC) return this._doFetchAnthropic(apiKey, key);
     try {
       const modelsURL = OPENROUTER_BASE_URL.replace(/\/+$/, '') + '/models';
       const headers = { 'Content-Type': 'application/json' };
@@ -120,6 +126,33 @@ class ModelService {
       return models;
     } catch (e) {
       logger.warn('Failed to fetch models:', e.message);
+      return [];
+    }
+  }
+
+  /**
+   * List Claude models through the Anthropic Models API. Each entry carries
+   * `max_input_tokens`, which becomes the context window.
+   * @param {string} cacheKey - provider:key, for cache invalidation
+   * @param {string} key - Anthropic API key
+   * @returns {Promise<string[]>} Model IDs
+   * @private
+   */
+  async _doFetchAnthropic(cacheKey, key) {
+    if (!key) return [];
+    try {
+      const client = await createAnthropicClient(key);
+      const models = [];
+      for await (const model of client.models.list({ limit: 100 })) {
+        models.push(model);
+      }
+      const ids = this._parseModelsResponse({ data: models });
+      this.#cachedModels = ids;
+      this.#cachedApiKey = cacheKey;
+      logger.debug(`Fetched ${ids.length} Claude models`);
+      return ids;
+    } catch (e) {
+      logger.warn('Failed to fetch Claude models:', e.message);
       return [];
     }
   }
@@ -382,7 +415,7 @@ class ModelService {
     try {
       const configured = game.settings.get(MODULE_ID, 'fallbackContextLimit');
       if (configured > 0) fallback = configured;
-      if (!model) model = game.settings.get(MODULE_ID, 'model') || '';
+      if (!model) model = getAIConfig().model || '';
     } catch {
       // Settings unavailable (early init, tests): the default stands.
     }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { buildIconPrompt } from '../../scripts/core/icon-service.js';
-import { buildItemSystem } from '../../scripts/core/dnd5e/item-builders.js';
+import { buildItemData } from '../../scripts/core/pf2e/item-builder.js';
 import { GenerateIconTool } from '../../scripts/tools/generate-icon.js';
 
 /**
@@ -81,9 +81,13 @@ test('the prompt carries the subject and the fixed tile invariants', () => {
   assert.match(prompt, /no text/i);
 });
 
-test('img never passes through into system data', () => {
-  const system = buildItemSystem({ img: 'icons/simulacrum/x.png', name: 'X' }, 'x');
-  assert.equal(system.img, undefined);
+test('img never passes through into system data', async () => {
+  const { item } = await buildItemData(
+    { type: 'effect', name: 'X', img: 'icons/simulacrum/x.png' },
+    async () => null
+  );
+  assert.equal(item.img, 'icons/simulacrum/x.png');
+  assert.equal(item.system.img, undefined);
 });
 
 test('a non-GM cannot generate icons', async () => {

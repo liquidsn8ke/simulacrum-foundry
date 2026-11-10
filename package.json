@@ -38,11 +38,14 @@
     "test:e2e": "npm run test:foundry",
     "test:e2e:ui": "playwright test --config=tests/e2e/playwright.config.mjs --ui",
     "test:e2e:headed": "playwright test --config=tests/e2e/playwright.config.mjs --headed",
-    "test:e2e:debug": "playwright test --config=tests/e2e/playwright.config.mjs --debug"
+    "test:e2e:debug": "playwright test --config=tests/e2e/playwright.config.mjs --debug",
+    "build:vendor": "node tools/build-vendor.mjs"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "1.2.0",
     "@foundryvtt/foundryvtt-cli": "^3.0.2",
     "@playwright/test": "^1.60.0",
+    "esbuild": "0.28.2",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jest": "^29.12.1",

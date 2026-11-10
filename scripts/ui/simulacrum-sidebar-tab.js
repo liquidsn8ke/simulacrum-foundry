@@ -19,6 +19,7 @@ import { emitProcessCancelled, SimulacrumHooks } from '../core/hook-manager.js';
 import { SequentialQueue } from '../utils/sequential-queue.js';
 import { SidebarMessageQueue } from './sidebar-message-queue.js';
 import { MODULE_ID, MODULE_PATH } from '../module-id.js';
+import { getAIConfig } from '../core/ai-config.js';
 import {
   buildSpecPreviewContext,
   hydrateSpecPreview,
@@ -614,8 +615,8 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
       processLabel,
       processIsRetrying: this.#isRetrying,
       disableInput: this._isSidebarInputDisabled(),
-      currentModel: game.settings.get(MODULE_ID, 'model') || '',
-      contextLimit: this._getFormattedContextLimit(game.settings.get(MODULE_ID, 'model')),
+      currentModel: getAIConfig().model || '',
+      contextLimit: this._getFormattedContextLimit(getAIConfig().model),
     };
   }
 
@@ -686,7 +687,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
    * @param {string} model - The model ID to save
    */
   async _saveModelSelection(model) {
-    const currentModel = game.settings.get(MODULE_ID, 'model');
+    const currentModel = getAIConfig().model;
     if (model && model !== currentModel) {
       try {
         await game.settings.set(MODULE_ID, 'model', model);
@@ -1800,7 +1801,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
         await game.settings.set(
           MODULE_ID,
           'contextLimitModel',
-          game.settings.get(MODULE_ID, 'model') || ''
+          getAIConfig().model || ''
         );
       } catch (err) {
         // Keep the pair consistent: if the association write fails, restore
@@ -1820,7 +1821,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
    */
   _filterAndShowDropdown(input, dropdown) {
     const query = input.value.toLowerCase();
-    const currentModel = game.settings.get(MODULE_ID, 'model');
+    const currentModel = getAIConfig().model;
 
     // Filter models
     const filtered = query

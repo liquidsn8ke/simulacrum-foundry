@@ -29,12 +29,12 @@ function withFetch(files, run) {
     });
 }
 
-const MANIFEST = JSON.stringify({ id: 'midi-qol', readme: 'README.md' });
+const MANIFEST = JSON.stringify({ id: 'xdy-pf2e-workbench', readme: 'README.md' });
 
 // This module declares its reference files, so the probe needs no guessing.
 const SIMULACRUM_MANIFEST = JSON.stringify({
   id: MODULE_ID,
-  flags: { [MODULE_ID]: { reference: ['dnd5e-6.0-fields.md'] } },
+  flags: { [MODULE_ID]: { reference: ['pf2e-npc-fields.md'] } },
 });
 
 test('lists the reference it can reach', async () => {
@@ -42,9 +42,9 @@ test('lists the reference it can reach', async () => {
   const result = await withFetch(
     {
       [`modules/${MODULE_ID}/module.json`]: SIMULACRUM_MANIFEST,
-      [`modules/${MODULE_ID}/reference/dnd5e-6.0-fields.md`]: '# Fields\n\nsave.dc is a formula.',
-      'modules/midi-qol/module.json': MANIFEST,
-      'modules/midi-qol/README.md': '# Flags\n\nfail.all fails every roll.',
+      [`modules/${MODULE_ID}/reference/pf2e-npc-fields.md`]: '# Fields\n\nsave.dc is a formula.',
+      'modules/xdy-pf2e-workbench/module.json': MANIFEST,
+      'modules/xdy-pf2e-workbench/README.md': '# Flags\n\nfail.all fails every roll.',
     },
     () => tool.execute({})
   );
@@ -53,7 +53,7 @@ test('lists the reference it can reach', async () => {
   assert.equal(body.ok, true);
   assert.ok(body.fileCount >= 2);
   assert.ok(body.sources.some(s => s.source === 'module'));
-  assert.ok(body.sources.some(s => s.source === 'midi-qol'));
+  assert.ok(body.sources.some(s => s.source === 'xdy-pf2e-workbench'));
 });
 
 test('a missing module costs nothing but itself', async () => {
@@ -63,7 +63,7 @@ test('a missing module costs nothing but itself', async () => {
   const result = await withFetch(
     {
       [`modules/${MODULE_ID}/module.json`]: SIMULACRUM_MANIFEST,
-      [`modules/${MODULE_ID}/reference/dnd5e-6.0-fields.md`]: '# Fields',
+      [`modules/${MODULE_ID}/reference/pf2e-npc-fields.md`]: '# Fields',
     },
     () => tool.execute({})
   );
@@ -79,7 +79,7 @@ test('search returns passages with a line number', async () => {
   const result = await withFetch(
     {
       [`modules/${MODULE_ID}/module.json`]: SIMULACRUM_MANIFEST,
-      [`modules/${MODULE_ID}/reference/dnd5e-6.0-fields.md`]:
+      [`modules/${MODULE_ID}/reference/pf2e-npc-fields.md`]:
         '# Fields\n\nsome prose\n\nthe DC is computed from range, never target\n\nmore prose',
     },
     () => tool.execute({ query: 'computed from range', context: 20 })
@@ -97,7 +97,7 @@ test('a search with no match says how to look differently', async () => {
   const result = await withFetch(
     {
       [`modules/${MODULE_ID}/module.json`]: SIMULACRUM_MANIFEST,
-      [`modules/${MODULE_ID}/reference/dnd5e-6.0-fields.md`]: '# Fields',
+      [`modules/${MODULE_ID}/reference/pf2e-npc-fields.md`]: '# Fields',
     },
     () => tool.execute({ query: 'nonexistent-term' })
   );
@@ -113,9 +113,9 @@ test('reading one file returns it in full', async () => {
   const result = await withFetch(
     {
       [`modules/${MODULE_ID}/module.json`]: SIMULACRUM_MANIFEST,
-      [`modules/${MODULE_ID}/reference/dnd5e-6.0-fields.md`]: text,
+      [`modules/${MODULE_ID}/reference/pf2e-npc-fields.md`]: text,
     },
-    () => tool.execute({ file: 'module/dnd5e-6.0-fields.md' })
+    () => tool.execute({ file: 'module/pf2e-npc-fields.md' })
   );
 
   const body = JSON.parse(result.content);
@@ -149,9 +149,9 @@ test('a source filter narrows the probe', async () => {
   const result = await withFetch(
     {
       [`modules/${MODULE_ID}/module.json`]: SIMULACRUM_MANIFEST,
-      [`modules/${MODULE_ID}/reference/dnd5e-6.0-fields.md`]: '# Fields',
-      'modules/midi-qol/module.json': MANIFEST,
-      'modules/midi-qol/README.md': '# Flags',
+      [`modules/${MODULE_ID}/reference/pf2e-npc-fields.md`]: '# Fields',
+      'modules/xdy-pf2e-workbench/module.json': MANIFEST,
+      'modules/xdy-pf2e-workbench/README.md': '# Flags',
     },
     () => tool.execute({ source: 'module' })
   );
@@ -165,11 +165,11 @@ test('a path from a listing can be read back without re-probing', async () => {
   const tool = new ReadReferenceTool();
   const files = {
     [`modules/${MODULE_ID}/module.json`]: SIMULACRUM_MANIFEST,
-    [`modules/${MODULE_ID}/reference/dnd5e-6.0-fields.md`]: '# Fields\n\nbody text',
+    [`modules/${MODULE_ID}/reference/pf2e-npc-fields.md`]: '# Fields\n\nbody text',
   };
 
   await withFetch(files, () => tool.execute({ source: 'module' }));
-  const result = await withFetch(files, () => tool.execute({ file: 'module/dnd5e-6.0-fields.md' }));
+  const result = await withFetch(files, () => tool.execute({ file: 'module/pf2e-npc-fields.md' }));
 
   assert.equal(JSON.parse(result.content).ok, true);
 });
@@ -180,9 +180,8 @@ test('a file name is not lower-cased into a route that does not exist', async ()
   // as `modules/cat/readme.md`. Windows resolves that anyway and Linux does not,
   // which is exactly how it shipped: fine in development, broken in the world.
   const tool = new ReadReferenceTool();
-  const result = await withFetch(
-    { 'modules/cat/README.md': '# Coven automation toolkit' },
-    () => tool.execute({ file: 'cat/README.md' })
+  const result = await withFetch({ 'modules/sundry/README.md': '# Sundry' }, () =>
+    tool.execute({ file: 'sundry/README.md' })
   );
 
   assert.equal(JSON.parse(result.content).ok, true);
@@ -194,12 +193,14 @@ test('a file named in mixed case still resolves', async () => {
   // understood, so a lookup against what is already indexed stays case-insensitive.
   const tool = new ReadReferenceTool();
   const files = {
-    'modules/midi-qol/module.json': MANIFEST,
-    'modules/midi-qol/README.md': '# Flags',
+    'modules/xdy-pf2e-workbench/module.json': MANIFEST,
+    'modules/xdy-pf2e-workbench/README.md': '# Flags',
   };
 
-  await withFetch(files, () => tool.execute({ source: 'midi-qol' }));
-  const result = await withFetch(files, () => tool.execute({ file: 'MIDI-QOL/README.MD' }));
+  await withFetch(files, () => tool.execute({ source: 'xdy-pf2e-workbench' }));
+  const result = await withFetch(files, () =>
+    tool.execute({ file: 'XDY-PF2E-WORKBENCH/README.MD' })
+  );
 
   assert.equal(JSON.parse(result.content).ok, true);
 });

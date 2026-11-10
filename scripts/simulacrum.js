@@ -23,10 +23,11 @@ try {
   /* dev mode */
 }
 import { InteractionLogDownloader } from './core/interaction-logger.js';
-import { registerAbilityRecorder } from './core/ability-recorder.js';
+import { registerRollRecorder } from './core/pf2e/roll-recorder.js';
 import { assetIndexService } from './core/asset-index-service.js';
 import { modelService } from './core/model-service.js';
-import { OPENROUTER_BASE_URL } from './core/ai-client.js';
+import { OPENROUTER_BASE_URL, PROVIDERS, createAnthropicClient } from './core/ai-client.js';
+import { getAIConfig } from './core/ai-config.js';
 import { MODULE_ID, MODULE_PATH } from './module-id.js';
 
 const MODULE_NAME = 'Simulacrum AI Assistant';
@@ -64,7 +65,14 @@ async function validateAndUpdateTabButton() {
  */
 async function testEndpoint() {
   try {
-    const apiKey = game.settings.get(MODULE_ID, 'apiKey');
+    const { provider, apiKey } = getAIConfig();
+
+    if (provider === PROVIDERS.ANTHROPIC) {
+      if (!apiKey) return false;
+      const client = await createAnthropicClient(apiKey);
+      await client.models.list({ limit: 1 });
+      return true;
+    }
 
     const modelsURL = OPENROUTER_BASE_URL.replace(/\/+$/, '') + '/models';
     const headers = { 'Content-Type': 'application/json' };
@@ -190,6 +198,73 @@ async function initializeForGMUser() {
  * Register API settings
  */
 function registerAPISettings() {
+  const reinitialize = label => async () => {
+    try {
+      modelService.invalidateCache();
+      ui.simulacrum?.invalidateModelList();
+      await SimulacrumCore.initializeAIClient();
+      await validateAndUpdateTabButton();
+      createLogger('Module').info(`AI client reinitialized after ${label} change`);
+    } catch (e) {
+      createLogger('Module').warn(`Failed to reinitialize AI after ${label} change`, e);
+    }
+  };
+
+  game.settings.register(MODULE_ID, 'provider', {
+    name: game.i18n.localize('SIMULACRUM.Settings.Provider.Name'),
+    hint: game.i18n.localize('SIMULACRUM.Settings.Provider.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      [PROVIDERS.ANTHROPIC]: game.i18n.localize('SIMULACRUM.Settings.Provider.Anthropic'),
+      [PROVIDERS.OPENROUTER]: game.i18n.localize('SIMULACRUM.Settings.Provider.OpenRouter'),
+    },
+    default: PROVIDERS.ANTHROPIC,
+    restricted: true,
+    onChange: reinitialize('provider'),
+  });
+
+  game.settings.register(MODULE_ID, 'anthropicApiKey', {
+    name: game.i18n.localize('SIMULACRUM.Settings.AnthropicApiKey.Name'),
+    hint: game.i18n.localize('SIMULACRUM.Settings.AnthropicApiKey.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    default: '',
+    restricted: true,
+    onChange: reinitialize('anthropicApiKey'),
+  });
+
+  game.settings.register(MODULE_ID, 'effort', {
+    name: game.i18n.localize('SIMULACRUM.Settings.Effort.Name'),
+    hint: game.i18n.localize('SIMULACRUM.Settings.Effort.Hint'),
+    scope: 'world',
+    config: true,
+    type: String,
+    choices: {
+      low: game.i18n.localize('SIMULACRUM.Settings.Effort.Low'),
+      medium: game.i18n.localize('SIMULACRUM.Settings.Effort.Medium'),
+      high: game.i18n.localize('SIMULACRUM.Settings.Effort.High'),
+      xhigh: game.i18n.localize('SIMULACRUM.Settings.Effort.XHigh'),
+      max: game.i18n.localize('SIMULACRUM.Settings.Effort.Max'),
+    },
+    default: 'high',
+    restricted: true,
+    onChange: reinitialize('effort'),
+  });
+
+  game.settings.register(MODULE_ID, 'refusalFallback', {
+    name: game.i18n.localize('SIMULACRUM.Settings.RefusalFallback.Name'),
+    hint: game.i18n.localize('SIMULACRUM.Settings.RefusalFallback.Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true,
+    restricted: true,
+    onChange: reinitialize('refusalFallback'),
+  });
+
   game.settings.register(MODULE_ID, 'apiKey', {
     name: game.i18n.localize('SIMULACRUM.Settings.ApiKey.Name'),
     hint: game.i18n.localize('SIMULACRUM.Settings.ApiKey.Hint'),
@@ -277,10 +352,10 @@ function registerAPISettings() {
 
 Hooks.once('init', async () => {
   logger.info(`Initializing ${MODULE_NAME}`);
-    // Records what happens when a built ability is used in play, so the agent can
-    // reason about real outcomes instead of a synthetic run. Writes nothing until
-    // an ability has been marked as needing testing.
-    registerAbilityRecorder();
+  // Records what happens when a built creature or item is used in play, so the agent
+  // can reason about real outcomes instead of a synthetic run. Writes nothing until
+  // something has been marked as needing testing.
+  registerRollRecorder();
   // Register module settings (no redundant enable toggle)
   registerAPISettings();
   registerAdvancedSettings();

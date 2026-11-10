@@ -48,16 +48,13 @@ import { MODULE_ID, MODULE_PATH } from '../module-id.js';
  * a different job with different output.
  */
 const MODULE_DOCS = Object.freeze({
-  'midi-qol': ['README.md'],
-  // DAE is deliberately absent rather than listed empty: it ships no readable file,
-  // so its documentation is bundled in this module's own reference instead. Listing
-  // a module with nothing behind it would advertise material that does not exist.
-  cat: ['README.md'],
-  // Upstream CHANGELOGs are deliberately not listed. They are the bulk of the readable
-  // module documentation (midi-qol alone is ~650 KB, Chris's Premades ~175 KB) and are
-  // rarely what an answer needs, so listing them invites a context-filling read for a
-  // question a search would have answered. A changelog can still be read by passing its
-  // path (`file: "midi-qol/Changelog.md"`) — it is just not advertised.
+  // PF2e Workbench documents its automation settings in its README.
+  'xdy-pf2e-workbench': ['README.md'],
+  sundry: ['README.md'],
+  // PF2e Toolbelt ships an empty README; its features are described in this module's
+  // own reference (pf2e-automation-patterns.md). Any other ACTIVE module's README can be
+  // read by passing its id as `source` (see _targets). Changelogs are not advertised
+  // (Workbench's is ~350 KB) but can be read by path: `file: "xdy-pf2e-workbench/CHANGELOG.md"`.
 });
 
 /** Extensions worth treating as readable text. */
@@ -87,7 +84,7 @@ export class ReadReferenceTool extends BaseTool {
   constructor() {
     super(
       'read_reference',
-      'List or search the reference material available for writing these automations: the dnd5e 6.x field guide shipped with this module, the CAT macro flag shapes, the CPR generic settings (every generic and every setting it accepts, with defaults), the DAE effect expiry vocabulary, the dnd5e text enrichers, how this world runs Simple Quest, and the upstream changelog of CAT/CPR changes since the last sync (read it when asked whether existing abilities need updating). Use this BEFORE authoring an activity or setting a flag, so the field names and shapes come from the actual system rather than from memory. This is the ONLY route to the documentation: run_javascript, document_search and asset_search read the world\'s documents, never these. A "how does this work" or "does this exist" question is answered here, by reading the owning file - not by searching the world and reporting that nothing was found. Read-only.'
+      'List or search the PF2e reference shipped with this module: NPC actor fields (pf2e-npc-fields.md), item and hazard fields (pf2e-item-fields.md), every rule-element key with real examples from the system compendia (pf2e-rule-elements.md), text enrichers and inline rolls (pf2e-enrichers.md), how official content automates abilities and where automation stops (pf2e-automation-patterns.md), the active-module notes (pf2e-modules.md), and this world\'s conventions (world-conventions.md). Also reads the README of an installed module when you pass its id as `source`. Use this BEFORE writing a rule element or a field you have not seen, so shapes come from the actual system rather than memory. This is the ONLY route to the documentation: run_javascript, document_search and asset_search read the world\'s documents, never these. Read-only.'
     );
     this.requiresConfirmation = false; // read-only
     this._index = null; // in-memory only, for the life of the page
@@ -102,7 +99,7 @@ export class ReadReferenceTool extends BaseTool {
         source: {
           type: 'string',
           description:
-            'Restrict to one source: "module" for this module\'s own reference, or an installed module id such as "midi-qol". Omit to search everything.',
+            'Restrict to one source: "module" for this module\'s own reference, or an active module id such as "xdy-pf2e-workbench" to read its README. Omit to search everything.',
         },
         context: {
           type: 'number',
@@ -115,7 +112,7 @@ export class ReadReferenceTool extends BaseTool {
         file: {
           type: 'string',
           description:
-            'Read one reference file in full, by the path a listing returned (e.g. "module/dnd5e-6.0-fields.md"). Use this after a search shows you which file is worth reading properly.',
+            'Read one reference file in full, by the path a listing returned (e.g. "module/pf2e-rule-elements.md"). Use this after a search shows you which file is worth reading properly.',
         },
       },
     };
@@ -205,6 +202,7 @@ export class ReadReferenceTool extends BaseTool {
    * @param {string} [source]
    * @returns {Array<{source: string, moduleId: string, route: string, isDir: boolean, label: string}>}
    */
+  // eslint-disable-next-line complexity -- one branch per documentation source
   _targets(source) {
     const out = [];
 
@@ -218,7 +216,14 @@ export class ReadReferenceTool extends BaseTool {
       });
     }
 
-    for (const [id, docs] of Object.entries(MODULE_DOCS)) {
+    // Any active module not in the list can still be read by naming it.
+    const docsFor = { ...MODULE_DOCS };
+    const named = source && source !== 'module' && source !== MODULE_ID && source !== 'simulacrum';
+    if (named && !docsFor[source] && globalThis.game?.modules?.get?.(source)?.active) {
+      docsFor[source] = ['README.md'];
+    }
+
+    for (const [id, docs] of Object.entries(docsFor)) {
       if (source && source !== id) continue;
       for (const doc of docs) {
         const isDir = doc.endsWith('/');

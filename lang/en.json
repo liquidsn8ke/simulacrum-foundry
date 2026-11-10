@@ -3,7 +3,30 @@
     "Settings": {
       "ApiKey": {
         "Name": "OpenRouter API Key",
-        "Hint": "Enter your OpenRouter API key (openrouter.ai/keys)."
+        "Hint": "Used when the provider is OpenRouter, and by the icon generator (which needs an image model). Get one at openrouter.ai/keys."
+      },
+      "Provider": {
+        "Name": "AI Provider",
+        "Hint": "Anthropic talks to Claude directly (recommended). OpenRouter uses any tool-capable model through openrouter.ai.",
+        "Anthropic": "Anthropic (Claude)",
+        "OpenRouter": "OpenRouter"
+      },
+      "AnthropicApiKey": {
+        "Name": "Anthropic API Key",
+        "Hint": "Your key from platform.claude.com. It is stored in this world's settings and sent from the GM's browser straight to Anthropic; any GM of this world can read it."
+      },
+      "Effort": {
+        "Name": "Claude Effort",
+        "Hint": "How hard Claude thinks before answering. High suits building documents; Medium is cheaper and faster for simple edits.",
+        "Low": "Low",
+        "Medium": "Medium",
+        "High": "High",
+        "XHigh": "Extra high",
+        "Max": "Max"
+      },
+      "RefusalFallback": {
+        "Name": "Claude Refusal Fallback",
+        "Hint": "If Claude's safety checks decline a request, let Anthropic retry it on a fallback model in the same call instead of stopping."
       },
       "TrustAllTools": "Trust All Tools (Dangerous)",
       "TrustAllToolsHint": "⚠️ WARNING: Allows AI to execute ANY tool without confirmation. Only enable if you fully trust the AI.",

@@ -53,9 +53,9 @@ test('the in-game tools ship, because they are the point of the module', () => {
   // then failed on its first tool import.
   const toolFiles = files.filter(name => name.startsWith(`${MODULE_ID}/scripts/tools/`));
   assert.ok(toolFiles.length >= 20, `expected the tool modules, found ${toolFiles.length}`);
-  assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/build-ability.js`));
+  assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/pf2e-build-creature.js`));
   assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/read-ability-runs.js`));
-  assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/preview-spec.js`));
+  assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/pf2e-build-item.js`));
 });
 
 test('development paths never reach the archive', () => {

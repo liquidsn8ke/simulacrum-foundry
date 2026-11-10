@@ -25,8 +25,6 @@ import { RunJavascriptTool } from '../tools/run-javascript.js';
 import { ReadToolOutputTool } from '../tools/read-tool-output.js';
 import { DocumentOwnershipTool } from '../tools/document-ownership.js';
 import { NotifyUserTool } from '../tools/notify-user.js';
-import { PreviewSpecTool } from '../tools/preview-spec.js';
-import { BuildAbilityTool } from '../tools/build-ability.js';
 import { GenerateIconTool } from '../tools/generate-icon.js';
 import { ReadAbilityRunsTool } from '../tools/read-ability-runs.js';
 import { ConfirmAbilityTool } from '../tools/confirm-ability.js';
@@ -34,6 +32,11 @@ import { ReadReferenceTool } from '../tools/read-reference.js';
 import { ReadMemoryTool } from '../tools/read-memory.js';
 import { AppendHistoryTool } from '../tools/append-history.js';
 import { WriteLessonTool } from '../tools/write-lesson.js';
+import { Pf2eLookupTool } from '../tools/pf2e-lookup.js';
+import { Pf2eBuildCreatureTool } from '../tools/pf2e-build-creature.js';
+import { Pf2eBuildItemTool } from '../tools/pf2e-build-item.js';
+import { Pf2eValidateTool } from '../tools/pf2e-validate.js';
+import { Pf2eBenchmarkTool } from '../tools/pf2e-benchmark.js';
 import { DocumentAPI } from './document-api.js';
 
 /**
@@ -72,6 +75,7 @@ export class ToolRegistry {
   /**
    * Register default system tools
    */
+  // eslint-disable-next-line max-lines-per-function -- one line per built-in tool
   registerDefaults() {
     try {
       const tools = [
@@ -93,8 +97,6 @@ export class ToolRegistry {
         new ReadToolOutputTool(),
         new DocumentOwnershipTool(),
         new NotifyUserTool(),
-        new PreviewSpecTool(),
-        new BuildAbilityTool(),
         new GenerateIconTool(),
         new ReadAbilityRunsTool(),
         new ConfirmAbilityTool(),
@@ -102,6 +104,11 @@ export class ToolRegistry {
         new ReadMemoryTool(),
         new AppendHistoryTool(),
         new WriteLessonTool(),
+        new Pf2eLookupTool(),
+        new Pf2eBuildCreatureTool(),
+        new Pf2eBuildItemTool(),
+        new Pf2eValidateTool(),
+        new Pf2eBenchmarkTool(),
       ];
 
       for (const t of tools) {

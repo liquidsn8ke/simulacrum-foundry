@@ -22,12 +22,45 @@ import {
 } from '../utils/retry-helpers.js';
 import { DEFAULT_CONTEXT_LIMIT, modelService } from './model-service.js';
 import { MODULE_ID } from '../module-id.js';
+import {
+  buildAnthropicRequest,
+  fromAnthropicResponse,
+  DEFAULT_ANTHROPIC_MODEL,
+} from './anthropic-adapter.js';
 
 /**
- * The only supported AI endpoint in this fork. OpenRouter is OpenAI-compatible,
- * so the request/response handling is identical to any OpenAI-style backend.
+ * OpenRouter endpoint (OpenAI-compatible). Used when the `provider` setting is
+ * "openrouter", and by the icon generator, which needs an image model.
  */
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+
+/** Providers the client can talk to. Anthropic is the default. */
+export const PROVIDERS = Object.freeze({ ANTHROPIC: 'anthropic', OPENROUTER: 'openrouter' });
+
+let anthropicSdkPromise = null;
+
+/**
+ * Load the bundled Anthropic SDK on first use, so a world on the OpenRouter
+ * provider never pays for it.
+ * @returns {Promise<Function>} The Anthropic client class
+ */
+export async function loadAnthropicSdk() {
+  anthropicSdkPromise ??= import('../vendor/anthropic-sdk.js').then(m => m.Anthropic);
+  return anthropicSdkPromise;
+}
+
+/**
+ * Create an Anthropic client for browser use. The key is the world's own,
+ * entered by a GM in module settings; the SDK refuses browser use unless told
+ * so explicitly.
+ * @param {string} apiKey
+ * @param {object} [options]
+ * @returns {Promise<object>}
+ */
+export async function createAnthropicClient(apiKey, options = {}) {
+  const Anthropic = await loadAnthropicSdk();
+  return new Anthropic({ apiKey, dangerouslyAllowBrowser: true, ...options });
+}
 
 export const AI_ERROR_CODES = Object.freeze({
   TOOL_CALL_FAILURE: 'TOOL_CALL_FAILURE',
@@ -71,9 +104,14 @@ export class AIClient {
    * @throws {SimulacrumError} When unsupported provider baseURL is provided
    */
   constructor(config = {}) {
+    this.provider = config.provider || PROVIDERS.OPENROUTER;
     this.apiKey = config.apiKey ? config.apiKey.trim() : config.apiKey;
     this.baseURL = config.baseURL || OPENROUTER_BASE_URL;
-    this.model = config.model;
+    const anthropic = this.provider === PROVIDERS.ANTHROPIC;
+    this.model = config.model || (anthropic ? DEFAULT_ANTHROPIC_MODEL : config.model);
+    this.effort = config.effort || 'high';
+    this.refusalFallback = config.refusalFallback !== false;
+    this._anthropic = null;
 
     // Context length will be dynamically derived when needed
     this._fallbackContextLimit = DEFAULT_CONTEXT_LIMIT;
@@ -292,6 +330,10 @@ export class AIClient {
   async chat(messages, tools = null, options = {}) {
     // Task-14: Apply request delay to prevent rate limiting
     await this._applyRequestDelay();
+
+    if (this.provider === PROVIDERS.ANTHROPIC) {
+      return this._chatAnthropic(messages, tools, options);
+    }
 
     if (isDebugEnabled()) {
       createLogger('AIDiagnostics').info('Chat request context:', {
@@ -565,6 +607,73 @@ export class AIClient {
   }
 
   /**
+   * Chat through the Anthropic Messages API.
+   *
+   * Streams the request (long builds can run for minutes) and returns the final
+   * message translated into the OpenAI-style shape the rest of the harness reads.
+   * The SDK retries rate limits and server errors itself; the per-request timeout
+   * and the user's cancel signal are passed through.
+   *
+   * @param {Array} messages - Harness messages; a leading system message becomes the system prompt
+   * @param {Array|null} tools - OpenAI-style tool schemas
+   * @param {object} options - { signal }
+   * @returns {Promise<object>} OpenAI-style raw response
+   * @private
+   */
+  async _chatAnthropic(messages, tools, options = {}) {
+    if (!this.apiKey) {
+      throw new APIError('401 - No Anthropic API key is set. Add one in Module Settings.');
+    }
+    this._anthropic ??= await createAnthropicClient(this.apiKey);
+
+    // The harness's parity repair works on the OpenAI shape, before translation.
+    const repaired = this._checkMessageStructure(messages);
+    const body = buildAnthropicRequest({
+      model: this.model,
+      messages: repaired,
+      tools,
+      effort: this.effort,
+      refusalFallback: this.refusalFallback,
+    });
+
+    const timeoutMs = this._getRequestTimeoutMs();
+    const requestOptions = {
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(timeoutMs > 0 ? { timeout: timeoutMs } : {}),
+    };
+
+    let message;
+    try {
+      const stream = this._anthropic.beta.messages.stream(body, requestOptions);
+      message = await stream.finalMessage();
+    } catch (error) {
+      if (isAbortError(error, options.signal) || error?.name === 'APIUserAbortError') {
+        throw createAbortError();
+      }
+      if (error?.name === 'APIConnectionTimeoutError') {
+        throw new NetworkError(`AI request timed out after ${(timeoutMs / 1000).toFixed(0)}s`);
+      }
+      if (typeof error?.status === 'number') {
+        const detail = error?.error?.error?.message || error.message || 'API error';
+        throw new APIError(`${error.status} - ${detail}`);
+      }
+      throw new NetworkError(error?.message || 'Could not reach the Anthropic API');
+    }
+
+    if (isDebugEnabled()) {
+      createLogger('AIDiagnostics').info('Anthropic response', {
+        model: message?.model,
+        stop_reason: message?.stop_reason,
+        usage: message?.usage,
+        blocks: (message?.content ?? []).map(b => b.type),
+        input_transformations: message?.input_transformations,
+      });
+    }
+
+    return fromAnthropicResponse(message);
+  }
+
+  /**
    * Chat with system message automatically prepended
    * @param {Array} conversationMessages - Array of conversation message objects
    * @param {Function} getSystemPrompt - Function that returns system prompt
@@ -604,6 +713,12 @@ export class AIClient {
    * Validate OpenAI connection
    */
   async validateOpenAI() {
+    if (this.provider === PROVIDERS.ANTHROPIC) {
+      if (!this.apiKey) throw new Error('401 - No Anthropic API key');
+      this._anthropic ??= await createAnthropicClient(this.apiKey);
+      const page = await this._anthropic.models.list({ limit: 100 });
+      return (page?.data ?? []).some(model => model.id === this.model);
+    }
     // Expect baseURL to already include version suffix (e.g., .../v1)
     const response = await fetch(`${this.baseURL}/models`, {
       method: 'GET',

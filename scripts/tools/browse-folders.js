@@ -25,7 +25,7 @@ export class BrowseFoldersTool extends BaseTool {
           path: {
             type: 'string',
             description:
-              'For "browse": the folder path to list contents of (e.g., "assets/tokens", "systems/dnd5e/icons"). For "search": the folder name or partial name to find (e.g., "tokens", "portraits").',
+              'For "browse": the folder path to list contents of (e.g., "assets/tokens", "systems/pf2e/icons"). For "search": the folder name or partial name to find (e.g., "tokens", "portraits").',
           },
           source: {
             type: 'string',

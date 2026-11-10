@@ -18,7 +18,7 @@ function getTab() {
 }
 
 function getModel() {
-  try { return game.settings.get('simulacrum', 'model') || 'unknown'; }
+  try { return game.settings.get('simulacrum-pf2e', 'model') || 'claude-opus-5-5'; }
   catch { return 'unknown'; }
 }
 
@@ -165,7 +165,7 @@ function buildDiscordPostTitle(model, result) {
 
 function buildDiscordPostBody(result, elapsedMs, model) {
   const system = game.system?.id || 'unknown';
-  const moduleVersion = game.modules.get('simulacrum')?.version || 'unknown';
+  const moduleVersion = game.modules.get('simulacrum-pf2e')?.version || 'unknown';
   const scoreDisplay = result.dnf ? 'DNF 0/100' : `${result.score}/100`;
 
   let body = `**Score: ${scoreDisplay}**\n`;

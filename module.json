@@ -16,7 +16,7 @@
       "url": "https://github.com/Daxiongmao87"
     }
   ],
-  "version": "0.8.0",
+  "version": "0.9.0",
   "compatibility": {
     "minimum": "14.369",
     "verified": "14.369"
@@ -71,21 +71,18 @@
   ],
   "socket": false,
   "manifest": "https://github.com/liquidsn8ke/simulacrum-foundry/releases/latest/download/module.json",
-  "download": "https://github.com/liquidsn8ke/simulacrum-foundry/releases/download/0.8.0/simulacrum-pf2e.zip",
+  "download": "https://github.com/liquidsn8ke/simulacrum-foundry/releases/download/0.9.0/simulacrum-pf2e.zip",
   "url": "https://github.com/liquidsn8ke/simulacrum-foundry",
   "flags": {
     "simulacrum-pf2e": {
       "reference": [
-        "dnd5e-6.0-fields.md",
-        "dnd5e-enrichers.md",
-        "cat-macro-flags.md",
-        "cat-embedded-macros.md",
-        "cpr-generic-config.md",
-        "dae-effect-expiry.md",
-        "midi-reactions.md",
-        "simple-quest.md",
-        "world-conventions.md",
-        "upstream-changelog.md"
+        "pf2e-npc-fields.md",
+        "pf2e-item-fields.md",
+        "pf2e-rule-elements.md",
+        "pf2e-enrichers.md",
+        "pf2e-automation-patterns.md",
+        "pf2e-modules.md",
+        "world-conventions.md"
       ]
     }
   },

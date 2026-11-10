@@ -54,7 +54,7 @@ export async function getAvailableMacrosList() {
   });
 
   // 2. Simulacrum Module Macros
-  const pack = game.packs.get('simulacrum.simulacrum-tools');
+  const pack = game.packs.get(`${MODULE_ID}.simulacrum-tools`);
   if (pack) {
     const index = await pack.getIndex();
     index.forEach(i => {
@@ -64,6 +64,43 @@ export async function getAvailableMacrosList() {
 
   if (macros.length === 0) return 'No macros available.';
   return macros.join('\n');
+}
+
+/**
+ * The game system and modules this world runs, read live from Foundry.
+ *
+ * The agent may only rely on a module that is active, and should know when a useful one
+ * is installed but switched off, so both lists are given. Read at prompt-build time, so
+ * it reflects the world as it is rather than as the reference describes it.
+ * @param {object} [gameRef] - Foundry's game object (injectable for tests)
+ * @returns {string}
+ */
+export function buildModuleReport(gameRef = globalThis.game) {
+  try {
+    const system = gameRef?.system;
+    const lines = [
+      'WORLD (live)',
+      '',
+      `Game system: ${system?.id ?? 'unknown'} ${system?.version ?? ''}`.trim(),
+      `Foundry: ${gameRef?.version ?? 'unknown'}`,
+    ];
+    const modules = [...(gameRef?.modules?.values?.() ?? [])].filter(m => m.id !== MODULE_ID);
+    const label = m => `${m.id}${m.version ? `@${m.version}` : ''}`;
+    const active = modules.filter(m => m.active).map(label).sort();
+    const inactive = modules.filter(m => !m.active).map(m => m.id).sort();
+    lines.push(
+      '',
+      `ACTIVE MODULES (${active.length}) - automation may rely on these:`,
+      active.length ? active.join(', ') : '(none)',
+      '',
+      `INSTALLED BUT INACTIVE (${inactive.length}) - never rely on these; suggest enabling one if it would help:`,
+      inactive.length ? inactive.join(', ') : '(none)'
+    );
+    return lines.join('\n');
+  } catch (err) {
+    logger.warn('Could not read the module list for the system prompt', err);
+    return 'WORLD: the module list could not be read this turn.';
+  }
 }
 
 /**
@@ -167,7 +204,12 @@ export async function buildSystemPrompt() {
       // so the agent knows which lessons and how much history exist without having to
       // read the files to find out.
       const memoryIndex = await buildMemoryIndex();
-      basePrompt = [...getAutomationPromptBlocks(), documentTypesInfo, memoryIndex].join('\n\n');
+      basePrompt = [
+        ...getAutomationPromptBlocks(),
+        documentTypesInfo,
+        buildModuleReport(),
+        memoryIndex,
+      ].join('\n\n');
     } else {
       basePrompt = [
         game.i18n.localize('SIMULACRUM.SystemPrompt.Standard.Identity'),

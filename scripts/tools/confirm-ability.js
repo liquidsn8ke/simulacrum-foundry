@@ -19,7 +19,7 @@ export class ConfirmAbilityTool extends BaseTool {
   constructor() {
     super(
       'confirm_ability',
-      'Mark a built ability as confirmed working, which stops recording its uses and removes the debug output. Call this only after the user has told you it behaves correctly in play. The recorded runs are kept as history. This is reversible: rebuilding the ability with build_ability starts recording again.'
+      'Mark a built ability as confirmed working, which stops recording its uses and removes the debug output. Call this only after the user has told you it behaves correctly in play. The recorded runs are kept as history. This is reversible: rebuilding it with pf2e_build_creature or pf2e_build_item starts recording again.'
     );
     this.requiresConfirmation = true;
     this.schema = {
@@ -27,7 +27,7 @@ export class ConfirmAbilityTool extends BaseTool {
       properties: {
         itemUuid: {
           type: 'string',
-          description: 'The itemUuid of the ability the user has confirmed.',
+          description: 'The actorUuid or itemUuid the GM has confirmed.',
         },
         summary: {
           type: 'string',
@@ -104,7 +104,7 @@ export class ConfirmAbilityTool extends BaseTool {
           status: 'confirmed',
           runsKept: !params.discardRuns ? runCount : 0,
           next:
-            'Tell the user recording has stopped and the debug output is gone. If they need to change the ability, rebuild it with build_ability and it will be marked for testing again.',
+            'Tell the user recording has stopped and the debug output is gone. If they need to change the ability, rebuild it with pf2e_build_creature or pf2e_build_item and it will be marked for testing again.',
         },
         null,
         2

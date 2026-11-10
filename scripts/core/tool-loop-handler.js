@@ -804,7 +804,15 @@ async function _handleTextOnlyResponse(currentResponse, context, state) {
     currentResponse.content.trim().length > 0 &&
     !_restatesStoredAnswer(currentResponse.content, context)
   ) {
-    context.conversationManager.addMessage('assistant', currentResponse.content);
+    // Keep the provider's raw blocks with the reply, so Claude's reasoning for it is
+    // replayed unchanged on the next request (see core/anthropic-adapter.js).
+    context.conversationManager.addMessage(
+      'assistant',
+      currentResponse.content,
+      null,
+      null,
+      currentResponse.provider_metadata || null
+    );
     await context.conversationManager.save();
   }
 

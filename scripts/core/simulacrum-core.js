@@ -144,16 +144,12 @@ class SimulacrumCore {
    */
   static async initializeAIClient() {
     try {
-      const apiKey = game.settings.get(MODULE_ID, 'apiKey');
-      const model = game.settings.get(MODULE_ID, 'model');
+      // Provider, key, model, effort and fallback setting, resolved in one place.
+      const { getAIConfig } = await import('./ai-config.js');
+      const config = getAIConfig();
 
-      // Do not enforce API key at this layer. Some endpoints may not require it.
-
-      // Create AI client (OpenRouter, OpenAI-compatible)
-      this.aiClient = new AIClient({
-        apiKey,
-        model,
-      });
+      // Do not enforce API key at this layer; the client reports a missing key on use.
+      this.aiClient = new AIClient(config);
       this.logger.info('AI Client Initialized');
 
       // Validate connection

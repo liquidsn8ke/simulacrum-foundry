@@ -1,152 +1,103 @@
-# Simulacrum: AI Automation Builder (Ebonhawk fork)
+# Simulacrum PF2e: AI Document Builder
 
-A private fork of [Simulacrum](https://github.com/Daxiongmao87/simulacrum-foundry),
-narrowed to one job: **turn natural-language ability text into working dnd5e
-automations, then help you verify them.**
+A fork of [Simulacrum](https://github.com/Daxiongmao87/simulacrum-foundry) (by way of
+[Ebonhawk's automation-builder fork](https://github.com/Ebonhawk3829/simulacrum-foundry/tree/personal)),
+specialised for **Pathfinder Second Edition**. Paste a homebrew stat block, ability, item, spell,
+hazard or effect into the sidebar; the agent works out how official PF2e content would represent
+and automate it, checks its plan with you, builds it directly in your world, validates it, and
+then helps you verify it in play.
 
-The upstream project is a generalist campaign copilot. This fork throws that away
-and does one thing: you describe an ability, the agent builds it as real document
-data on an actor's sheet, and then you use it in play while the module records
-what happened, so the two of you can work out whether it behaves.
-
-Not listed in the Foundry package directory — it is installed by manifest URL.
-
-## How it works
-
-1. You paste an ability's text — a statblock entry, a class feature, a magic item.
-2. You open the Simulacrum tab and ask for it on a specific actor.
-3. The agent says how it reads the ability — which activity, which flags, what lands
-   on whom — and you confirm or correct that reading **before anything is written**.
-   This check-in is the one step that always happens.
-4. It builds the item: activities, applied effects, and the midi-qol / DAE / CAT
-   flags behind them, or a script where flags cannot express the behaviour.
-5. You use the ability in play the way you normally would.
-6. You tell it what you saw. It compares that against the recorded run and against
-   what it intended, and either fixes the build or calls it confirmed.
-
-The agent is given the tools and the reference material, not a fixed procedure. How
-it gets from the text to the item is its call — this fork does not dictate the route,
-and it may build through the editable preview or by writing documents and scripts
-directly. What it keeps is the habit of checking its reading of the ability with you
-first, because an ability built from a statblock is a hypothesis until it has actually
-been used.
-
-Steps 3 and 6 are what this fork is for: catching a misreading before the build, and
-catching a wrong build before it is trusted.
-
-## What the agent can read
-
-It does not guess field names. It has tools for:
-
-- **`read_reference`** — the dnd5e 6.x field guide shipped with this module, plus
-  the documentation belonging to modules *installed in your world* (midi-qol's
-  flag reference and macro guide, DAE, CAT, Chris's Premades).
-- **`inspect_document_schema`** / **`list_document_schemas`** — the live shape of
-  any document, straight from the system.
-- **`search_documents`** — working examples in compendiums. A similar spell that
-  already works is the best template there is.
-- **`read_memory`** — its own persistent notes: the **lessons** it has learned and
-  the **session history** of what it built and discovered. These live outside the
-  world (`Data/simulacrum/`), so they survive a world reset. It records history as it
-  works and proposes lessons for you to confirm before they are saved.
+GM only. Installed by manifest URL, not from the Foundry package directory.
 
 ## Requirements
 
-| | |
-|---|---|
-| **Foundry VTT** | 14.369 or higher (verified on 14) |
-| **dnd5e** | **6.x** (verified on 6.0.6) |
-| **Required modules** | `midi-qol` (v14.6.3), `dae` (v14.6.2), `cat` (Coven's Automation Toolkit, 0.1.3) |
-| **Recommended** | `chris-premades` (2.1.3), `dfreds-convenient-effects` |
-| **Model access** | An [OpenRouter](https://openrouter.ai/keys) API key, and a model that supports tool calling |
-
-> [!IMPORTANT]
-> The model **must** support tool/function calling — that is how the agent touches
-> your world. A model without it will error or stall. On OpenRouter, filter by
-> [models with tool support](https://openrouter.ai/models?supported_parameters=tools).
+- Foundry VTT 14.369 or later, **pf2e** system 8.4.1 or later (verified on 8.7.0).
+- An **Anthropic API key** (platform.claude.com), or an OpenRouter key if you prefer OpenRouter.
+- Recommended: PF2e Toolbelt (per-target save and damage buttons for area abilities) and PF2e
+  Workbench. Nothing else is required; the agent reads which modules are active at startup and
+  only relies on those.
 
 ## Install
 
-Paste this into **Setup → Install Module → Manifest URL**:
+In Foundry's setup screen: **Add-on Modules → Install Module**, paste the manifest URL, Install:
 
 ```
-https://github.com/Ebonhawk3829/simulacrum-foundry/releases/latest/download/module.json
+https://github.com/liquidsn8ke/simulacrum-foundry/releases/latest/download/module.json
 ```
 
-To update, install the same manifest URL again — Foundry will offer the new
-version. There is no package-browser entry and no automatic update check.
+Enable **Simulacrum PF2e** in your world, then in **Configure Settings → Simulacrum PF2e**:
 
-**Manual install:** download `simulacrum.zip` from
-[Releases](https://github.com/Ebonhawk3829/simulacrum-foundry/releases) and
-extract it into `Data/modules/`.
+| Setting | What it does |
+|---|---|
+| AI Provider | Anthropic (default, talks to Claude directly) or OpenRouter |
+| Anthropic API Key | Your key. Stored in world settings and sent from the GM's browser straight to Anthropic; any GM of the world can read it |
+| Claude Effort | How hard Claude thinks. High suits building; Medium is cheaper for small edits |
+| Claude Refusal Fallback | If a request is declined by Claude's safety checks, let Anthropic retry it on a fallback model in the same call |
+| OpenRouter API Key | For the OpenRouter provider, and for the icon generator (needs an image model) |
 
-## Configuration
+Pick the model in the sidebar's dropdown. With Anthropic the default is Claude Opus 5.5.
 
-1. Enable the module in your world.
-2. Open **Module Settings → Simulacrum** and set the OpenRouter API key. Only
-   OpenRouter is supported in this fork.
-3. Open the Simulacrum sidebar tab and pick a model from the header dropdown.
+## How it works
 
-The world must be running the dnd5e system, and you must be a GM — the agent is
-GM-only.
+1. Paste the text into the **Simulacrum** sidebar tab and say what you want ("build this creature").
+2. The agent benchmarks the numbers against official creatures of the same level and lays out a
+   plan: each part of the stat block and how it will be represented — native field, glossary
+   ability, rule element, enricher button, an active module, or text only. **Nothing is written
+   until you confirm.**
+3. It builds the creature (or item) in one step: spells, gear and standard abilities are copied
+   from the pf2e compendia, everything else is written in official Monster Core shapes. The result
+   is validated for silent failures (rule elements the system rejected, broken links, bad
+   formulas, unfilled DCs).
+4. Use it in play. Every roll it makes or receives is recorded with pf2e's own roll context.
+5. Tell the agent what you saw; it compares that with the record and its intent, fixes and
+   rebuilds, or marks it confirmed.
 
-## Writing automations by hand
+The agent keeps lessons (which you confirm) and a history log in `Data/simulacrum-pf2e/`, outside
+the world, so they survive a world reset.
 
-The **Cat Shield** integration sheet is where automations actually live, and both
-the agent and you write to the same place. Two conventions are worth knowing
-because they fail quietly when wrong:
+## The PF2e tools
 
-- **Identity is `system.identifier`** on the item, and `flags.cat.identifier` on
-  effects (falling back to `name.slugify()`). Automation looks items up by
-  identifier, never by display name, so a rename does not orphan anything.
-- **Where things live.** Activities go inside the item's system data as
-  `system.activities`, keyed by id — an id-keyed object, not an array. Effects go
-  at the item's top level as an embedded `ActiveEffect` collection. Put either in
-  the wrong place and Foundry accepts the write and then ignores it.
+| Tool | Purpose |
+|---|---|
+| `pf2e_build_creature` | Whole NPC from a spec; create, or rebuild in place. Troops handled. |
+| `pf2e_build_item` | One item: ability/strike on an actor, effect, feat, spell, equipment… from scratch or copied from an official item |
+| `pf2e_lookup` | Find official documents and UUIDs; read one as a template |
+| `pf2e_validate` | Report rule elements the system ignored (with its reason), broken @UUID links, bad formulas, empty DCs |
+| `pf2e_benchmark` | Percentiles of AC, HP, saves, strikes and spell DC among official creatures of the level |
+| `read_reference` | The shipped PF2e reference (below), and any active module's README |
+| `read_ability_runs` / `confirm_ability` | The in-play record, and closing it out |
 
-`reference/dnd5e-6.0-fields.md` in this repository is the guide the agent reads,
-and it is written for a human too. It is the fastest route to the shapes that are
-easy to get wrong.
+Hazards and journal entries are built with the generic document tools, guided by the reference.
 
-## Extending the tool set
+## Reference shipped with the module (`reference/`)
 
-The agent's tools are discovered from world macros. Add a `const tool`
-configuration object to a macro and Simulacrum exposes it:
+`pf2e-npc-fields.md`, `pf2e-item-fields.md` (incl. hazards), `pf2e-rule-elements.md` (every rule
+element key with real examples, generated from the pf2e compendia), `pf2e-enrichers.md`,
+`pf2e-automation-patterns.md` (how official content automates things and where automation
+stops), `pf2e-modules.md`, `world-conventions.md`.
 
-```javascript
-const tool = {
-    name: "my_custom_tool",
-    description: "A description of what this tool does",
-    parameters: {
-        type: "object",
-        properties: {
-            parameterName: {
-                type: "string",
-                description: "Description of the parameter"
-            }
-        },
-        required: ["parameterName"]
-    },
-    enabled: true
-};
+## How the Anthropic connection behaves
 
-// Access parameters via: this.args.parameterName
-return `Processed: ${this.args.parameterName}`;
+- Requests stream, use adaptive thinking at the configured effort, and cache the tools and system
+  prompt so repeated turns are cheap.
+- Claude's reasoning blocks are stored with each reply and sent back unchanged. Where the harness
+  edits history (corrections, compaction, rewind), requests ask the API to drop stale reasoning
+  instead of failing (`prefix_mismatch_behavior: "drop_block"`).
+- A turn that is cut off or refused never runs its tool calls.
+
+## Development
+
+```bash
+npm ci
+npm run test:local      # policy, lint baseline, unit, regression, integration, component, security, package
+npm run build:vendor    # re-bundle the Anthropic SDK after changing its pinned version
+npm run build:release   # dist/module.json + dist/simulacrum-pf2e.zip
 ```
 
-Return a value to send output back to the agent; returning nothing shows as
-"No output". A `response` parameter is added automatically so the agent can
-explain itself as it goes.
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/Ebonhawk3829/simulacrum-foundry/issues)
-- **Changes**: [CHANGELOG.md](CHANGELOG.md)
-- **Upstream**: [Daxiongmao87/simulacrum-foundry](https://github.com/Daxiongmao87/simulacrum-foundry)
+Releases are published by GitHub Actions when a version tag matching `module.json` is pushed
+(`git tag 0.9.0 && git push origin 0.9.0`). CI runs the tests on every push to `personal`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-Fork of [Simulacrum](https://github.com/Daxiongmao87/simulacrum-foundry) by
-[Daxiongmao87](https://github.com/Daxiongmao87), used under the MIT License.
+MIT, as upstream. The bundled Anthropic SDK (`scripts/vendor/anthropic-sdk.js`) is MIT licensed;
+its license is included in the file header.
