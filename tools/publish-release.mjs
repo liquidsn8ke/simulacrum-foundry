@@ -234,7 +234,7 @@ try {
   console.error(`[publish] Release creation failed: ${err.stderr || err.message}`);
   console.error(
     `[publish] The tag ${tag} was pushed. Create the release manually with:\n` +
-      `  gh release create ${tag} dist/module.json dist/simulacrum.zip --repo ${repo} --notes-file ${notesTmp}`
+      `  gh release create ${tag} dist/module.json dist/${manifest.id}.zip --repo ${repo} --notes-file ${notesTmp}`
   );
   process.exit(1);
 }

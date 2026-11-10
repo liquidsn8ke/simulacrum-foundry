@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-11-10
+
+First release of the PF2e fork. This release changes the module's identity and release pipeline
+only; the agent's prompt, tools and reference are still the dnd5e ones and are replaced in later
+releases, so it is not yet useful in a PF2e world.
+
+### Changed
+
+- **Module id is now `simulacrum-pf2e`**, so it installs beside the original Simulacrum rather than
+  over it. Everything Foundry keys by package id (settings, flags, `modules/<id>/` paths, the memory
+  folder `Data/simulacrum-pf2e/`) reads it from `scripts/module-id.js`. Settings, conversations and
+  memory from a `simulacrum` install are not carried over.
+- `module.json` targets the **pf2e** system (minimum 8.4.1, verified 8.7.0) on Foundry 14.369. The
+  midi-qol, DAE and CAT requirements are gone; PF2e Toolbelt and PF2e Workbench are recommended.
+- Manifest, download and documentation links point at `liquidsn8ke/simulacrum-foundry`.
+- `verify-release` checks for the pf2e system instead of requiring dependencies.
+
+### Added
+
+- GitHub Actions: `ci.yml` runs the local test tiers on every push to `personal`; `release.yml`
+  publishes a release (stamped `module.json` + `simulacrum-pf2e.zip`) when a version tag is pushed,
+  then verifies it the way Foundry installs it.
+
+### Fixed
+
+- The ESLint baseline check runs on Windows (ESLint is launched through node, and paths are compared
+  with `/` separators).
+
 ## [0.7.5] - 2026-11-01
 
 Brings the shipped reference and the system prompt back in line with what live use has taught, and

@@ -4,6 +4,7 @@
  */
 
 import { createLogger } from '../utils/logger.js';
+import { MODULE_ID } from '../module-id.js';
 
 const logger = createLogger('ToolPermissionManager');
 
@@ -155,7 +156,7 @@ class ToolPermissionManager {
       permissions[toolName] = state;
     }
 
-    await game.settings.set('simulacrum', this._settingsKey, permissions);
+    await game.settings.set(MODULE_ID, this._settingsKey, permissions);
     logger.info(`Permission for ${toolName} set to ${state}`);
   }
 
@@ -183,7 +184,7 @@ class ToolPermissionManager {
    */
   isTrustAllEnabled() {
     try {
-      return game.settings.get('simulacrum', this._trustAllKey) === true;
+      return game.settings.get(MODULE_ID, this._trustAllKey) === true;
     } catch {
       return false;
     }
@@ -238,7 +239,7 @@ class ToolPermissionManager {
     }
 
     // 2. Discover registered macro tools
-    const macroManager = game.modules.get('simulacrum')?.api?.macroToolManager;
+    const macroManager = game.modules.get(MODULE_ID)?.api?.macroToolManager;
     const registeredTools = macroManager ? macroManager.getTools() : [];
 
     const exists = name => result.some(t => t.toolName === name);
@@ -278,7 +279,7 @@ class ToolPermissionManager {
    */
   _getStoredPermissions() {
     try {
-      return game.settings.get('simulacrum', this._settingsKey) || {};
+      return game.settings.get(MODULE_ID, this._settingsKey) || {};
     } catch {
       return {};
     }

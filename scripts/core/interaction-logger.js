@@ -7,6 +7,7 @@
  */
 
 import { createLogger } from '../utils/logger.js';
+import { MODULE_ID } from '../module-id.js';
 
 const logger = createLogger('InteractionLogger');
 const LOGGER_VERSION = '1.0.0';
@@ -66,7 +67,7 @@ class InteractionLogger {
           sessionStart: this._sessionStart,
           v: 1,
         };
-        await game.user.setFlag('simulacrum', this._getPersistenceKey(), state);
+        await game.user.setFlag(MODULE_ID, this._getPersistenceKey(), state);
         return true;
       }
     } catch (e) {
@@ -82,7 +83,7 @@ class InteractionLogger {
   async load() {
     try {
       if (typeof game !== 'undefined' && game?.user && typeof game.user.getFlag === 'function') {
-        const state = await game.user.getFlag('simulacrum', this._getPersistenceKey());
+        const state = await game.user.getFlag(MODULE_ID, this._getPersistenceKey());
         if (state && state.entries) {
           this._entries = state.entries;
           this._sessionStart = state.sessionStart || new Date().toISOString();
@@ -281,10 +282,10 @@ class InteractionLogger {
   buildReadableLog() {
     const model =
       typeof game !== 'undefined'
-        ? (game.settings?.get('simulacrum', 'model') ?? 'unknown')
+        ? (game.settings?.get(MODULE_ID, 'model') ?? 'unknown')
         : 'unknown';
     const system = game?.system?.id || 'unknown';
-    const moduleVersion = game?.modules?.get('simulacrum')?.version || 'unknown';
+    const moduleVersion = game?.modules?.get(MODULE_ID)?.version || 'unknown';
     const date = new Date().toISOString();
 
     const toolCalls = this._entries.filter(e => e.type === EntryType.TOOL_CALL).length;
@@ -366,7 +367,7 @@ class InteractionLogger {
    * @returns {string} JSON export
    */
   export() {
-    const customSystemPrompt = game?.settings?.get('simulacrum', 'customSystemPrompt') || '';
+    const customSystemPrompt = game?.settings?.get(MODULE_ID, 'customSystemPrompt') || '';
 
     const exportData = {
       version: LOGGER_VERSION,

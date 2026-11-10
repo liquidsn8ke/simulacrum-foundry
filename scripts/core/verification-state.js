@@ -26,7 +26,9 @@
  */
 
 /** Flag scope: this module's own, so it cannot collide with dnd5e or another module. */
-const SCOPE = 'simulacrum';
+import { MODULE_ID } from '../module-id.js';
+
+const SCOPE = MODULE_ID;
 
 /**
  * Where verification data hangs off an item.

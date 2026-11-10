@@ -1,10 +1,14 @@
 {
-  "id": "simulacrum",
-  "title": "Simulacrum: AI Automation Builder (Ebonhawk fork)",
-  "description": "Private fork of Simulacrum, narrowed to one job: turn natural-language ability text (monster statblocks, class features, magic items) into working dnd5e automations. The agent parses an ability, shows an editable preview of what it understood, builds the Feature with its activities, effects and midi-qol/DAE/CAT flags, then hands it to the GM to use in play while it records what happened. OpenRouter only. Not for public distribution.",
+  "id": "simulacrum-pf2e",
+  "title": "Simulacrum PF2e: AI Document Builder",
+  "description": "A fork of Simulacrum specialised for Pathfinder Second Edition. An agent in the sidebar turns stat blocks, abilities, items, spells, hazards and other rules text into working PF2e documents: it reads the system's compendia and data shapes, proposes how each part will be automated (rule elements first, then installed modules, then scripts), builds the document after the GM confirms, and helps verify it in play. GM only.",
   "authors": [
     {
-      "name": "Ebonhawk",
+      "name": "liquidsn8ke",
+      "url": "https://github.com/liquidsn8ke"
+    },
+    {
+      "name": "Ebonhawk (automation-builder fork)",
       "url": "https://github.com/Ebonhawk3829"
     },
     {
@@ -12,7 +16,7 @@
       "url": "https://github.com/Daxiongmao87"
     }
   ],
-  "version": "0.7.5",
+  "version": "0.8.0",
   "compatibility": {
     "minimum": "14.369",
     "verified": "14.369"
@@ -20,42 +24,25 @@
   "relationships": {
     "systems": [
       {
-        "id": "dnd5e",
+        "id": "pf2e",
         "type": "system",
         "compatibility": {
-          "minimum": "6.0.6",
-          "verified": "6.0.6",
-          "maximum": "6.999"
+          "minimum": "8.4.1",
+          "verified": "8.7.0"
         }
       }
     ],
-    "requires": [
-      {
-        "id": "midi-qol",
-        "type": "module",
-        "reason": "The builder writes midi-qol flags (repeating saves) and the self-test drives the midi workflow to run the ability deterministically."
-      },
-      {
-        "id": "dae",
-        "type": "module",
-        "reason": "Conditions are applied through DAE changes (macro.StatusEffect); applied effects will not land without it."
-      },
-      {
-        "id": "cat",
-        "type": "module",
-        "reason": "Provides the workflow helpers the self-test uses and the event passes these automations are written against."
-      }
-    ],
+    "requires": [],
     "recommends": [
       {
-        "id": "chris-premades",
+        "id": "pf2e-toolbelt",
         "type": "module",
-        "reason": "Source of the patterns this builder follows; needed at run time by automations that reference its generics."
+        "reason": "Its target and template helpers resolve area saves and apply damage per target, which covers aura and area abilities that rule elements cannot automate on their own."
       },
       {
-        "id": "dfreds-convenient-effects",
+        "id": "xdy-pf2e-workbench",
         "type": "module",
-        "reason": "Referenced by automations that apply named effects rather than raw conditions."
+        "reason": "Optional automation the builder can fall back on when a rule element cannot express an ability."
       }
     ],
     "conflicts": [],
@@ -83,11 +70,11 @@
     }
   ],
   "socket": false,
-  "manifest": "https://github.com/Ebonhawk3829/simulacrum-foundry/releases/latest/download/module.json",
-  "download": "https://github.com/Ebonhawk3829/simulacrum-foundry/releases/download/0.7.5/simulacrum.zip",
-  "url": "https://github.com/Ebonhawk3829/simulacrum-foundry",
+  "manifest": "https://github.com/liquidsn8ke/simulacrum-foundry/releases/latest/download/module.json",
+  "download": "https://github.com/liquidsn8ke/simulacrum-foundry/releases/download/0.8.0/simulacrum-pf2e.zip",
+  "url": "https://github.com/liquidsn8ke/simulacrum-foundry",
   "flags": {
-    "simulacrum": {
+    "simulacrum-pf2e": {
       "reference": [
         "dnd5e-6.0-fields.md",
         "dnd5e-enrichers.md",
@@ -102,8 +89,8 @@
       ]
     }
   },
-  "bugs": "https://github.com/Ebonhawk3829/simulacrum-foundry/issues",
-  "changelog": "https://github.com/Ebonhawk3829/simulacrum-foundry/blob/personal/CHANGELOG.md",
-  "readme": "https://github.com/Ebonhawk3829/simulacrum-foundry/blob/personal/README.md",
-  "license": "https://github.com/Ebonhawk3829/simulacrum-foundry/blob/personal/LICENSE"
+  "bugs": "https://github.com/liquidsn8ke/simulacrum-foundry/issues",
+  "changelog": "https://github.com/liquidsn8ke/simulacrum-foundry/blob/personal/CHANGELOG.md",
+  "readme": "https://github.com/liquidsn8ke/simulacrum-foundry/blob/personal/README.md",
+  "license": "https://github.com/liquidsn8ke/simulacrum-foundry/blob/personal/LICENSE"
 }

@@ -8,6 +8,7 @@ import { createLogger } from '../utils/logger.js';
 import { toolRegistry } from './tool-registry.js';
 import { getAutomationPromptBlocks } from './domain-prompt.js';
 import { memoryStore } from './memory-store.js';
+import { MODULE_ID } from '../module-id.js';
 
 const logger = createLogger('SystemPrompt');
 
@@ -103,8 +104,8 @@ async function buildMemoryIndex() {
  */
 export async function buildSystemPrompt() {
   const documentTypesInfo = getDocumentTypesInfo();
-  const legacyMode = game?.settings?.get('simulacrum', 'legacyMode') || false;
-  const customSystemPrompt = game?.settings?.get('simulacrum', 'customSystemPrompt') || '';
+  const legacyMode = game?.settings?.get(MODULE_ID, 'legacyMode') || false;
+  const customSystemPrompt = game?.settings?.get(MODULE_ID, 'customSystemPrompt') || '';
 
   // Fetch available macros (World + Module) for execution context
   const macrosList = await getAvailableMacrosList();
@@ -156,7 +157,7 @@ export async function buildSystemPrompt() {
       toolSchemas,
     ].join('\n\n');
   } else {
-    const automationMode = game?.settings?.get('simulacrum', 'automationMode') ?? true;
+    const automationMode = game?.settings?.get(MODULE_ID, 'automationMode') ?? true;
 
     if (automationMode) {
       // Automation-builder fork: replace the generalist campaign-copilot prompt with

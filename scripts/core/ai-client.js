@@ -21,6 +21,7 @@ import {
   DEFAULT_RETRY_CONFIG,
 } from '../utils/retry-helpers.js';
 import { DEFAULT_CONTEXT_LIMIT, modelService } from './model-service.js';
+import { MODULE_ID } from '../module-id.js';
 
 /**
  * The only supported AI endpoint in this fork. OpenRouter is OpenAI-compatible,
@@ -78,7 +79,7 @@ export class AIClient {
     this._fallbackContextLimit = DEFAULT_CONTEXT_LIMIT;
     try {
       if (typeof game !== 'undefined' && game?.settings?.get) {
-        const configuredLimit = game.settings.get('simulacrum', 'fallbackContextLimit');
+        const configuredLimit = game.settings.get(MODULE_ID, 'fallbackContextLimit');
         if (configuredLimit && configuredLimit > 0) {
           this._fallbackContextLimit = configuredLimit;
         }
@@ -110,7 +111,7 @@ export class AIClient {
     let delay = 0;
     try {
       if (typeof game !== 'undefined' && game?.settings?.get) {
-        delay = game.settings.get('simulacrum', 'apiRequestDelay') || 0;
+        delay = game.settings.get(MODULE_ID, 'apiRequestDelay') || 0;
       }
     } catch {
       // Settings not available, use default
@@ -134,7 +135,7 @@ export class AIClient {
   _getRequestTimeoutMs() {
     try {
       if (typeof game !== 'undefined' && game?.settings?.get) {
-        const value = game.settings.get('simulacrum', 'requestTimeout');
+        const value = game.settings.get(MODULE_ID, 'requestTimeout');
         if (typeof value === 'number' && value >= 0) {
           return value;
         }

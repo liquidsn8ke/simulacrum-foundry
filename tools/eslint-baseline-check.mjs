@@ -8,13 +8,15 @@ import { fileURLToPath } from 'node:url';
 
 const execFileAsync = promisify(execFile);
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const ESLINT = resolve(ROOT, 'node_modules/.bin/eslint');
+// Run ESLint's JS entry point through node: node_modules/.bin/eslint is a shell shim
+// that execFile cannot run on Windows.
+const ESLINT = resolve(ROOT, 'node_modules/eslint/bin/eslint.js');
 const BASELINE = resolve(ROOT, 'tests/baselines/eslint.json');
 const baseline = JSON.parse(await readFile(BASELINE, 'utf8'));
 
 let stdout;
 try {
-  ({ stdout } = await execFileAsync(ESLINT, ['scripts', 'tests', 'tools', '--format', 'json'], {
+  ({ stdout } = await execFileAsync(process.execPath, [ESLINT, 'scripts', 'tests', 'tools', '--format', 'json'], {
     cwd: ROOT,
     maxBuffer: 20_000_000,
   }));
@@ -50,7 +52,8 @@ function summarize(results) {
     for (const message of result.messages) {
       if (message.severity !== 2) continue;
       const entry = {
-        path: relative(ROOT, result.filePath),
+        // Baseline paths use '/', so normalize Windows separators before comparing.
+        path: relative(ROOT, result.filePath).split('\\').join('/'),
         rule_id: message.ruleId,
         message: message.message,
       };

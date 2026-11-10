@@ -14,6 +14,7 @@ import {
   REQUIRED_FILES,
 } from '../../tools/lib/release-builder.mjs';
 import { readZip, createZip } from '../../tools/lib/zip.mjs';
+import { MODULE_ID } from '../../scripts/module-id.js';
 
 const ROOT = join(import.meta.dirname, '..', '..');
 
@@ -31,18 +32,18 @@ const files = names.filter(name => !name.endsWith('/'));
 test('the archive wraps everything in a folder named after the module id', () => {
   // Foundry extracts the archive straight into Data/modules/, so the manifest
   // must land inside a folder whose name matches the manifest id.
-  assert.equal(release.folder, 'simulacrum');
-  assert.ok(names.includes('simulacrum/'), 'the folder itself is an entry');
-  assert.ok(files.every(name => name.startsWith('simulacrum/')), 'nothing sits outside the folder');
+  assert.equal(release.folder, MODULE_ID);
+  assert.ok(names.includes(`${MODULE_ID}/`), 'the folder itself is an entry');
+  assert.ok(files.every(name => name.startsWith(`${MODULE_ID}/`)), 'nothing sits outside the folder');
 });
 
 test('the archive contains the manifest at its expected path', () => {
-  assert.ok(files.includes('simulacrum/module.json'));
+  assert.ok(files.includes(`${MODULE_ID}/module.json`));
 });
 
 test('the archive contains every file the module needs to load', () => {
   for (const required of REQUIRED_FILES) {
-    assert.ok(names.includes(`simulacrum/${required}`), `missing ${required}`);
+    assert.ok(names.includes(`${MODULE_ID}/${required}`), `missing ${required}`);
   }
 });
 
@@ -50,19 +51,19 @@ test('the in-game tools ship, because they are the point of the module', () => {
   // Regression guard: excluding a top-level "tools/" directory by NAME also
   // swallowed "scripts/tools/", producing an archive that installed cleanly and
   // then failed on its first tool import.
-  const toolFiles = files.filter(name => name.startsWith('simulacrum/scripts/tools/'));
+  const toolFiles = files.filter(name => name.startsWith(`${MODULE_ID}/scripts/tools/`));
   assert.ok(toolFiles.length >= 20, `expected the tool modules, found ${toolFiles.length}`);
-  assert.ok(toolFiles.includes('simulacrum/scripts/tools/build-ability.js'));
-  assert.ok(toolFiles.includes('simulacrum/scripts/tools/read-ability-runs.js'));
-  assert.ok(toolFiles.includes('simulacrum/scripts/tools/preview-spec.js'));
+  assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/build-ability.js`));
+  assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/read-ability-runs.js`));
+  assert.ok(toolFiles.includes(`${MODULE_ID}/scripts/tools/preview-spec.js`));
 });
 
 test('development paths never reach the archive', () => {
   for (const excluded of EXCLUDED_ROOTS) {
-    const leaked = files.filter(name => name.startsWith(`simulacrum/${excluded}/`));
+    const leaked = files.filter(name => name.startsWith(`${MODULE_ID}/${excluded}/`));
     assert.deepEqual(leaked, [], `${excluded}/ leaked into the release`);
   }
-  assert.equal(files.some(name => name.startsWith('simulacrum/packs/_source/')), false);
+  assert.equal(files.some(name => name.startsWith(`${MODULE_ID}/packs/_source/`)), false);
 });
 
 test('no stray secrets or environment files are shipped', () => {
@@ -75,8 +76,8 @@ test('no stray secrets or environment files are shipped', () => {
 test('the archive carries an explicit entry for each directory', () => {
   const directories = names.filter(name => name.endsWith('/'));
   assert.ok(directories.length > 0, 'released packages contain directory entries');
-  assert.ok(directories.includes('simulacrum/scripts/'));
-  assert.ok(directories.includes('simulacrum/scripts/core/'));
+  assert.ok(directories.includes(`${MODULE_ID}/scripts/`));
+  assert.ok(directories.includes(`${MODULE_ID}/scripts/core/`));
 
   // Every directory entry must be implied by a real file, or the archive is
   // carrying empty folders.
@@ -88,13 +89,13 @@ test('the archive carries an explicit entry for each directory', () => {
 
 test('the stamped manifest points the download at this version', () => {
   const manifest = JSON.parse(
-    release.entries.find(entry => entry.name === 'simulacrum/module.json').data.toString('utf8')
+    release.entries.find(entry => entry.name === `${MODULE_ID}/module.json`).data.toString('utf8')
   );
 
   assert.equal(manifest.version, '0.0.0');
   assert.equal(
     manifest.download,
-    'https://github.com/example/simulacrum-foundry/releases/download/0.0.0/simulacrum.zip'
+    `https://github.com/example/simulacrum-foundry/releases/download/0.0.0/${MODULE_ID}.zip`
   );
   // The manifest URL must stay on a stable address, or Foundry stops seeing
   // updates once a newer release exists.
@@ -113,7 +114,7 @@ test('the repository manifest has no duplicate keys', () => {
 
 test('the repository manifest declares its id, version and compatibility', () => {
   const manifest = parseManifest(readFileSync(join(ROOT, 'module.json'), 'utf8'));
-  assert.equal(manifest.id, 'simulacrum');
+  assert.equal(manifest.id, MODULE_ID);
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   assert.ok(manifest.compatibility.minimum);
   assert.ok(manifest.compatibility.verified);
@@ -122,20 +123,20 @@ test('the repository manifest declares its id, version and compatibility', () =>
 test('the declared entry points exist in the archive', () => {
   const manifest = parseManifest(readFileSync(join(ROOT, 'module.json'), 'utf8'));
   for (const script of manifest.esmodules) {
-    assert.ok(files.includes(`simulacrum/${script}`), `esmodule ${script} is not in the archive`);
+    assert.ok(files.includes(`${MODULE_ID}/${script}`), `esmodule ${script} is not in the archive`);
   }
   for (const style of manifest.styles) {
-    assert.ok(files.includes(`simulacrum/${style}`), `style ${style} is not in the archive`);
+    assert.ok(files.includes(`${MODULE_ID}/${style}`), `style ${style} is not in the archive`);
   }
   for (const language of manifest.languages) {
-    assert.ok(files.includes(`simulacrum/${language.path}`), `language ${language.path} is not in the archive`);
+    assert.ok(files.includes(`${MODULE_ID}/${language.path}`), `language ${language.path} is not in the archive`);
   }
 });
 
 test('the pack listed in the manifest is present', () => {
   const manifest = parseManifest(readFileSync(join(ROOT, 'module.json'), 'utf8'));
   for (const pack of manifest.packs) {
-    const present = files.some(name => name.startsWith(`simulacrum/${pack.path}/`));
+    const present = files.some(name => name.startsWith(`${MODULE_ID}/${pack.path}/`));
     assert.ok(present, `pack ${pack.name} has no files in the archive`);
   }
 });
@@ -145,7 +146,7 @@ test('the archive is readable and each entry inflates to its declared size', () 
   // reads, so a clean read means the archive is internally consistent.
   const entries = readZip(release.zip);
   assert.equal(entries.length, names.length);
-  const manifestEntry = entries.find(entry => entry.name === 'simulacrum/module.json');
+  const manifestEntry = entries.find(entry => entry.name === `${MODULE_ID}/module.json`);
   assert.ok(manifestEntry.data.length > 0);
 });
 
@@ -172,15 +173,15 @@ test('a stale archive is detected rather than published', () => {
   // A published 0.1.0 shipped exactly this way, with a bundled CHANGELOG that
   // predated the release it was inside.
   const stale = createZip([
-    { name: 'simulacrum/module.json', data: Buffer.from('{"id":"simulacrum","version":"9.9.9"}') },
-    { name: 'simulacrum/CHANGELOG.md', data: Buffer.from('an older changelog than the tree') },
+    { name: `${MODULE_ID}/module.json`, data: Buffer.from(JSON.stringify({ id: MODULE_ID, version: '9.9.9' })) },
+    { name: `${MODULE_ID}/CHANGELOG.md`, data: Buffer.from('an older changelog than the tree') },
   ]);
 
   const { differing, absent } = checkArchiveFreshness(stale, ROOT, { ignore: ['module.json'] });
   assert.deepEqual(differing, ['CHANGELOG.md']);
 
   // A file the archive carries that the tree no longer has is also staleness.
-  const ghost = createZip([{ name: 'simulacrum/removed-file.js', data: Buffer.from('gone') }]);
+  const ghost = createZip([{ name: `${MODULE_ID}/removed-file.js`, data: Buffer.from('gone') }]);
   assert.deepEqual(checkArchiveFreshness(ghost, ROOT).absent, ['removed-file.js']);
 });
 

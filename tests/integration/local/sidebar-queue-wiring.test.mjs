@@ -135,7 +135,7 @@ test('Stop leaves the queue intact and a manual send resumes it (FIFO preserved)
 
 test('entry point preloads the message queue template', async () => {
   const entry = await readFile(resolve(ROOT, 'scripts/simulacrum.js'), 'utf8');
-  assert.match(entry, /modules\/simulacrum\/templates\/simulacrum\/message-queue\.hbs/u);
+  assert.match(entry, /\$\{MODULE_PATH\}\/templates\/simulacrum\/message-queue\.hbs/u);
 });
 
 test('log template renders the pending queue in order and wires discard actions', async () => {

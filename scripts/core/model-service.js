@@ -5,8 +5,8 @@
 
 import { createLogger } from '../utils/logger.js';
 import { OPENROUTER_BASE_URL } from './ai-client.js';
+import { MODULE_ID } from '../module-id.js';
 
-const MODULE_ID = 'simulacrum';
 const logger = createLogger('ModelService');
 
 /**

@@ -5,6 +5,7 @@ import { MemoryStore, parseSections } from '../../scripts/core/memory-store.js';
 import { ReadMemoryTool } from '../../scripts/tools/read-memory.js';
 import { AppendHistoryTool } from '../../scripts/tools/append-history.js';
 import { WriteLessonTool } from '../../scripts/tools/write-lesson.js';
+import { MODULE_ID } from '../../scripts/module-id.js';
 
 /**
  * Install a fake Foundry route, fetch and FilePicker over an in-memory map, so the
@@ -49,7 +50,7 @@ test('an empty store reads as empty, not as an error', async () => {
 
   assert.deepEqual(summary.lessonTitles, []);
   assert.equal(summary.historyEntries, 0);
-  assert.match(summary.location, /Data\/simulacrum/);
+  assert.match(summary.location, new RegExp(`Data/${MODULE_ID}`));
 });
 
 test('a lesson is written, indexed, and read back', async () => {
@@ -99,8 +100,8 @@ test('parseSections drops any preamble before the first heading', () => {
 
 test('read_memory with no arguments returns the index of headings', async () => {
   const files = {
-    'simulacrum/lessons.md': '## Use sourceStart\n\nnot turnStart\n',
-    'simulacrum/history.md': '## 2026-10-22 09:00 — Did a thing\n\nbody\n',
+    [`${MODULE_ID}/lessons.md`]: '## Use sourceStart\n\nnot turnStart\n',
+    [`${MODULE_ID}/history.md`]: '## 2026-10-22 09:00 — Did a thing\n\nbody\n',
   };
   const result = await withMemory(files, () => new ReadMemoryTool().execute({}));
 
@@ -111,7 +112,7 @@ test('read_memory with no arguments returns the index of headings', async () => 
 });
 
 test('read_memory search finds a passage with a line number', async () => {
-  const files = { 'simulacrum/lessons.md': '## Use sourceStart\n\nnot turnStart, which loses the distinction\n' };
+  const files = { [`${MODULE_ID}/lessons.md`]: '## Use sourceStart\n\nnot turnStart, which loses the distinction\n' };
   const result = await withMemory(files, () => new ReadMemoryTool().execute({ query: 'loses the distinction' }));
 
   const body = JSON.parse(result.content);

@@ -17,6 +17,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
 
+import { MODULE_ID } from '../../scripts/module-id.js';
+
 const ROOT = resolve(import.meta.dirname, '../..');
 const REFERENCE = resolve(ROOT, 'reference');
 
@@ -40,7 +42,7 @@ test('every declared reference file exists', () => {
   // name here that has no file behind it makes the source unusable while still
   // being advertised — the failure the doc list was just fixed for.
   const manifest = JSON.parse(readFileSync(resolve(ROOT, 'module.json'), 'utf8'));
-  const declared = manifest.flags?.simulacrum?.reference ?? [];
+  const declared = manifest.flags?.[MODULE_ID]?.reference ?? [];
 
   assert.ok(declared.length > 0, 'the reference list must not be empty');
   for (const name of declared) {

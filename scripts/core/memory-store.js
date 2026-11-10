@@ -33,10 +33,12 @@
  */
 
 /** The Foundry data source, i.e. the user data directory. */
+import { MODULE_ID } from '../module-id.js';
+
 const SOURCE = 'data';
 
 /** Folder inside the data directory. Not inside `worlds/`, so resets miss it. */
-const DIR = 'simulacrum';
+const DIR = MODULE_ID;
 
 /** The two files, and their route names. */
 const LESSONS = 'lessons.md';

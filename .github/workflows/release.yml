@@ -1,0 +1,66 @@
+name: Release
+
+# Publish a Foundry release when a version tag is pushed, e.g.:
+#   git tag 0.8.0
+#   git push origin 0.8.0
+# The tag must equal "version" in module.json. The release gets the two assets Foundry
+# installs from: module.json (stamped for this version) and <module id>.zip.
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Tag matches module.json version
+        run: |
+          VERSION=$(node -p "require('./module.json').version")
+          if [ "$VERSION" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match module.json version $VERSION. Bump module.json, commit, then tag."
+            exit 1
+          fi
+
+      - name: Test
+        run: npm run test:local
+
+      - name: Build release assets
+        run: node tools/build-release.mjs --version "$TAG"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ID=$(node -p "require('./module.json').id")
+          TITLE=$(node -p "require('./module.json').title")
+          MANIFEST=$(node -p "require('./dist/module.json').manifest")
+          cat > dist/release-body.md <<EOF
+          **${TITLE} ${TAG}**
+
+          Install in Foundry via the manifest URL:
+          \`\`\`
+          ${MANIFEST}
+          \`\`\`
+
+          What changed: [CHANGELOG](https://github.com/${GITHUB_REPOSITORY}/blob/personal/CHANGELOG.md).
+          EOF
+          gh release create "$TAG" dist/module.json "dist/${ID}.zip" \
+            --title "${TITLE} ${TAG}" --notes-file dist/release-body.md
+
+      # Do what Foundry does: read the stable manifest URL, follow its download URL,
+      # and check the archive agrees with it.
+      - name: Verify the published release
+        run: node tools/verify-release.mjs --manifest "https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/module.json"

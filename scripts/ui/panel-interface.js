@@ -1,4 +1,5 @@
 import { createLogger } from '../utils/logger.js';
+import { MODULE_PATH } from '../module-id.js';
 
 /**
  * @class SimulacrumPanel
@@ -22,7 +23,7 @@ class SimulacrumPanel extends Application {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: 'simulacrum-panel',
       title: 'Simulacrum AI Assistant',
-      template: 'modules/simulacrum/templates/panel.hbs',
+      template: `${MODULE_PATH}/templates/panel.hbs`,
       width: 720,
       height: 600,
       resizable: true,

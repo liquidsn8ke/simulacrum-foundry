@@ -7,6 +7,7 @@ import {
 } from '../utils/message-utils.js';
 import { MarkdownRenderer } from '../lib/markdown-renderer.js';
 import { retrieveToolJustification } from './tool-loop-handler.js';
+import { MODULE_ID } from '../module-id.js';
 /**
  * ChatHandler - Single source of truth for all chat conversation flow
  * Orchestrates between AI, tools, conversation state, and UI
@@ -247,7 +248,7 @@ class ChatHandler {
     const { toolRegistry } = await import('./tool-registry.js');
 
     const tools = toolRegistry.getToolSchemas();
-    const legacyMode = game?.settings?.get('simulacrum', 'legacyMode') ?? false;
+    const legacyMode = game?.settings?.get(MODULE_ID, 'legacyMode') ?? false;
     const currentToolSupport = !legacyMode;
 
     // Execute tools and get final response

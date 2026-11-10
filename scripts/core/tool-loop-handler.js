@@ -25,6 +25,7 @@ import {
 import { emitProcessStatus, emitRetryStatus, SimulacrumHooks } from './hook-manager.js';
 import { interactionLogger } from './interaction-logger.js';
 import { executeToolCalls, storeToolJustification } from './tool-execution.js';
+import { MODULE_ID } from '../module-id.js';
 // Re-export for existing importers (chat-handler); the store lives in tool-execution.js.
 export { retrieveToolJustification } from './tool-execution.js';
 
@@ -114,7 +115,7 @@ async function _runLoopIteration(context) {
   let currentResponse = context.initialResponse;
 
   // Get limit from settings (default 100). -1 or 0 means infinite.
-  const configuredLimit = game?.settings?.get('simulacrum', 'toolLoopLimit') ?? 100;
+  const configuredLimit = game?.settings?.get(MODULE_ID, 'toolLoopLimit') ?? 100;
   const isInfinite = configuredLimit <= 0;
   const REPEAT_LIMIT = isInfinite ? Number.MAX_SAFE_INTEGER : configuredLimit;
 

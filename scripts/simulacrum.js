@@ -27,8 +27,8 @@ import { registerAbilityRecorder } from './core/ability-recorder.js';
 import { assetIndexService } from './core/asset-index-service.js';
 import { modelService } from './core/model-service.js';
 import { OPENROUTER_BASE_URL } from './core/ai-client.js';
+import { MODULE_ID, MODULE_PATH } from './module-id.js';
 
-const MODULE_ID = 'simulacrum';
 const MODULE_NAME = 'Simulacrum AI Assistant';
 const logger = createLogger('Module');
 
@@ -308,11 +308,11 @@ Hooks.once('init', async () => {
   // Preload Handlebars templates and partials used by the sidebar
   try {
     const templates = [
-      'modules/simulacrum/templates/simulacrum/sidebar.hbs',
-      'modules/simulacrum/templates/simulacrum/sidebar-log.hbs',
-      'modules/simulacrum/templates/simulacrum/sidebar-input.hbs',
-      'modules/simulacrum/templates/simulacrum/message.hbs',
-      'modules/simulacrum/templates/simulacrum/message-queue.hbs',
+      `${MODULE_PATH}/templates/simulacrum/sidebar.hbs`,
+      `${MODULE_PATH}/templates/simulacrum/sidebar-log.hbs`,
+      `${MODULE_PATH}/templates/simulacrum/sidebar-input.hbs`,
+      `${MODULE_PATH}/templates/simulacrum/message.hbs`,
+      `${MODULE_PATH}/templates/simulacrum/message-queue.hbs`,
     ];
     // Ensure loadTemplates exists in the Foundry environment
     if (typeof loadTemplates === 'function') {

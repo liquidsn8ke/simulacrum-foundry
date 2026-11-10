@@ -5,6 +5,7 @@
 
 import { createLogger } from '../utils/logger.js';
 import { toolPermissionManager, PermissionState } from '../core/tool-permission-manager.js';
+import { MODULE_ID, MODULE_PATH } from '../module-id.js';
 
 const logger = createLogger('ToolPermissionsConfig');
 
@@ -40,7 +41,7 @@ export class ToolPermissionsConfig extends HandlebarsApplicationMixin(Applicatio
   static PARTS = {
     form: {
       id: 'form',
-      template: 'modules/simulacrum/templates/tool-permissions-config.hbs',
+      template: `${MODULE_PATH}/templates/tool-permissions-config.hbs`,
       root: true,
       scrollable: ['.scrollable'],
     },
@@ -130,7 +131,7 @@ export class ToolPermissionsConfig extends HandlebarsApplicationMixin(Applicatio
 
     // Handle Trust All setting
     const trustAllEnabled = !!data.trustAllTools;
-    await game.settings.set('simulacrum', 'trustAllTools', trustAllEnabled);
+    await game.settings.set(MODULE_ID, 'trustAllTools', trustAllEnabled);
 
     // Process each tool permission from form data
     for (const [key, value] of Object.entries(data)) {
@@ -145,7 +146,7 @@ export class ToolPermissionsConfig extends HandlebarsApplicationMixin(Applicatio
     }
 
     // Save permissions
-    await game.settings.set('simulacrum', 'toolPermissions', permissions);
+    await game.settings.set(MODULE_ID, 'toolPermissions', permissions);
 
     logger.info('Tool permissions saved:', permissions);
     ui.notifications.info(
@@ -168,8 +169,8 @@ export class ToolPermissionsConfig extends HandlebarsApplicationMixin(Applicatio
 
     if (confirmed) {
       // Clear all stored permissions
-      await game.settings.set('simulacrum', 'toolPermissions', {});
-      await game.settings.set('simulacrum', 'trustAllTools', false);
+      await game.settings.set(MODULE_ID, 'toolPermissions', {});
+      await game.settings.set(MODULE_ID, 'trustAllTools', false);
       ui.notifications.info(
         game.i18n.localize('SIMULACRUM.Settings.ToolPermissions.ResetSuccess') ||
           'Tool permissions reset to defaults.'

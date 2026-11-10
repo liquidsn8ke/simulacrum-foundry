@@ -34,7 +34,7 @@
     {
       "path": "scripts/core/chat-handler.js",
       "rule_id": "complexity",
-      "message": "Async method 'handleToolResult' has a complexity of 26. Maximum allowed is 10.",
+      "message": "Async method 'handleToolResult' has a complexity of 27. Maximum allowed is 10.",
       "count": 1
     },
     {
@@ -52,7 +52,7 @@
     {
       "path": "scripts/core/chat-handler.js",
       "rule_id": "max-lines-per-function",
-      "message": "Async method 'processUserMessage' has too many lines (69). Maximum allowed is 50.",
+      "message": "Async method 'processUserMessage' has too many lines (61). Maximum allowed is 50.",
       "count": 1
     },
     {

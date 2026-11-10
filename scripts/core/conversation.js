@@ -9,6 +9,7 @@
 import { defaultTokenizer } from '../utils/tokenizer.js';
 import { createLogger, isDebugEnabled } from '../utils/logger.js';
 import { interactionLogger } from './interaction-logger.js';
+import { MODULE_ID } from '../module-id.js';
 
 const logger = createLogger('Conversation');
 const MAX_COMPACTION_ROUNDS = 10;
@@ -441,7 +442,7 @@ class ConversationManager {
     // Prefer user flag when available (per-user scope)
     try {
       if (typeof game !== 'undefined' && game?.user && typeof game.user.setFlag === 'function') {
-        await game.user.setFlag('simulacrum', this.worldId, state);
+        await game.user.setFlag(MODULE_ID, this.worldId, state);
         return true;
       }
     } catch (_e) {
@@ -455,7 +456,7 @@ class ConversationManager {
         game?.settings &&
         typeof game.settings.set === 'function'
       ) {
-        await game.settings.set('simulacrum', key, state);
+        await game.settings.set(MODULE_ID, key, state);
         return true;
       }
     } catch (_e) {
@@ -476,7 +477,7 @@ class ConversationManager {
     // Prefer user flag storage (per-user scope)
     try {
       if (typeof game !== 'undefined' && game?.user && typeof game.user.getFlag === 'function') {
-        state = await game.user.getFlag('simulacrum', this.worldId);
+        state = await game.user.getFlag(MODULE_ID, this.worldId);
       }
     } catch (_e) {
       // fall back below
@@ -490,7 +491,7 @@ class ConversationManager {
           game?.settings &&
           typeof game.settings.get === 'function'
         ) {
-          state = game.settings.get('simulacrum', key);
+          state = game.settings.get(MODULE_ID, key);
         }
       } catch (_e) {
         // ignore

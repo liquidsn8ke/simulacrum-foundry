@@ -10,7 +10,7 @@
     </li>
     {{else}}
     {{#each messages}}
-    {{> "modules/simulacrum/templates/simulacrum/message.hbs" this}}
+    {{> "modules/simulacrum-pf2e/templates/simulacrum/message.hbs" this}}
     {{/each}}
 
     {{!-- Queued user prompts, in submission order (#174) --}}
@@ -29,7 +29,7 @@
     {{#each pendingConfirmations}}
     <li class="chat-message message flexcol tool-confirmation-message" data-tool-call-id="{{this.toolCallId}}">
       <div class="message-content">
-        {{> "modules/simulacrum/templates/simulacrum/tool-confirmation.hbs" this}}
+        {{> "modules/simulacrum-pf2e/templates/simulacrum/tool-confirmation.hbs" this}}
       </div>
     </li>
     {{/each}}

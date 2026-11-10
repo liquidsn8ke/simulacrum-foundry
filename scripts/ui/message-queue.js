@@ -1,4 +1,5 @@
 import { createLogger } from '../utils/logger.js';
+import { MODULE_PATH } from '../module-id.js';
 
 /**
  * Queues user prompts submitted while the agent is already processing.
@@ -46,7 +47,7 @@ export class MessageQueueManager {
     this.renderTemplate = options.renderTemplate ?? null;
     this.appendTo = options.appendTo ?? null;
     this.templatePath =
-      options.templatePath ?? 'modules/simulacrum/templates/simulacrum/message-queue.hbs';
+      options.templatePath ?? `${MODULE_PATH}/templates/simulacrum/message-queue.hbs`;
   }
 
   /**

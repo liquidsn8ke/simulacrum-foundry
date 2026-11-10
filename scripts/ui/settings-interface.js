@@ -8,6 +8,7 @@ import { createLogger } from '../utils/logger.js';
 import { ToolPermissionsConfig } from './tool-permissions-config.js';
 import { DEFAULT_CONTEXT_LIMIT } from '../core/model-service.js';
 import { DEFAULT_ICON_MODEL } from '../core/icon-service.js';
+import { MODULE_ID } from '../module-id.js';
 
 /**
  * Helper function that converts an input field for a setting into a textarea.
@@ -84,7 +85,7 @@ export function registerAdvancedSettings() {
 
 function _registerToolPermissionSettings() {
   // Register the settings menu button for Tool Permissions
-  game.settings.registerMenu('simulacrum', 'toolPermissionsMenu', {
+  game.settings.registerMenu(MODULE_ID, 'toolPermissionsMenu', {
     name: 'SIMULACRUM.Settings.ToolPermissions.Name',
     label: 'SIMULACRUM.Settings.ToolPermissions.Label',
     hint: 'SIMULACRUM.Settings.ToolPermissions.Hint',
@@ -94,7 +95,7 @@ function _registerToolPermissionSettings() {
   });
 
   // Trust All Tools - bypass all confirmations (dangerous)
-  game.settings.register('simulacrum', 'trustAllTools', {
+  game.settings.register(MODULE_ID, 'trustAllTools', {
     name: 'SIMULACRUM.Settings.TrustAllTools',
     hint: 'SIMULACRUM.Settings.TrustAllToolsHint',
     scope: 'world',
@@ -105,7 +106,7 @@ function _registerToolPermissionSettings() {
   });
 
   // Per-tool permission states (stored as object)
-  game.settings.register('simulacrum', 'toolPermissions', {
+  game.settings.register(MODULE_ID, 'toolPermissions', {
     name: 'Tool Permissions',
     hint: 'Per-tool permission states for destructive tools.',
     scope: 'world',
@@ -117,7 +118,7 @@ function _registerToolPermissionSettings() {
 }
 
 function _registerCoreSettings() {
-  game.settings.register('simulacrum', 'fallbackContextLimit', {
+  game.settings.register(MODULE_ID, 'fallbackContextLimit', {
     name: 'SIMULACRUM.Settings.FallbackContextLimit',
     hint: 'SIMULACRUM.Settings.FallbackContextLimitHint',
     scope: 'world',
@@ -127,7 +128,7 @@ function _registerCoreSettings() {
     restricted: true,
   });
 
-  game.settings.register('simulacrum', 'contextLimitModel', {
+  game.settings.register(MODULE_ID, 'contextLimitModel', {
     name: 'Manual Context Limit Model',
     hint: 'Model the manually saved context limit applies to. Managed by the sidebar context input.',
     scope: 'world',
@@ -137,7 +138,7 @@ function _registerCoreSettings() {
     restricted: true,
   });
 
-  game.settings.register('simulacrum', 'temperature', {
+  game.settings.register(MODULE_ID, 'temperature', {
     name: 'Response Temperature',
     hint: 'Controls randomness in AI responses (0.0-1.0).',
     scope: 'world',
@@ -151,7 +152,7 @@ function _registerCoreSettings() {
 function _registerLegacySettings() {
   // Legacy mode is disabled for v1.0 release - not fully tested or at parity with native tool mode
   // The setting is registered but hidden from UI (config: false)
-  game.settings.register('simulacrum', 'legacyMode', {
+  game.settings.register(MODULE_ID, 'legacyMode', {
     name: 'Legacy Mode',
     hint: "Enable if your AI provider doesn't support OpenAI-style tool calling. Uses JSON block parsing instead. Note that this is less reliable.",
     scope: 'world',
@@ -167,7 +168,7 @@ function _registerLegacySettings() {
 function _registerContextSettings() {}
 
 function _registerAutomationSettings() {
-  game.settings.register('simulacrum', 'automationMode', {
+  game.settings.register(MODULE_ID, 'automationMode', {
     name: 'Automation Builder Mode',
     hint: 'Use the scoped automation-builder system prompt instead of the generalist campaign-copilot prompt. Disable to fall back to upstream behaviour.',
     scope: 'world',
@@ -177,7 +178,7 @@ function _registerAutomationSettings() {
     restricted: true,
   });
 
-  game.settings.register('simulacrum', 'iconModel', {
+  game.settings.register(MODULE_ID, 'iconModel', {
     name: 'Icon Generation Model',
     hint: 'OpenRouter image model used by the generate_icon tool. Default is Google Nano Banana 2 (Gemini 3.1 Flash Image), chosen for exact 512px square tiles. Any OpenRouter image model works; generation is billed per image.',
     scope: 'world',
@@ -189,7 +190,7 @@ function _registerAutomationSettings() {
 }
 
 function _registerStylingSettings() {
-  game.settings.register('simulacrum', 'customSystemPrompt', {
+  game.settings.register(MODULE_ID, 'customSystemPrompt', {
     name: 'Custom System Prompt',
     hint: 'Additional instructions to append to the system prompt.',
     scope: 'world',
@@ -231,7 +232,7 @@ function _applyEnhancements(html) {
 
   convertSettingToTextarea({
     html: $html,
-    moduleId: 'simulacrum',
+    moduleId: MODULE_ID,
     settingKey: 'customSystemPrompt',
     textareaStyle: style,
     repositionCallback: callback,
@@ -240,13 +241,13 @@ function _applyEnhancements(html) {
   // Add Discord link to Simulacrum settings tab
   _addDiscordLink($html);
 
-  $html.find('a.item[data-tab="simulacrum"]').on('click', () => {
+  $html.find(`a.item[data-tab="${MODULE_ID}"]`).on('click', () => {
     setTimeout(() => {
       // Check if input exists and hasn't been converted to textarea yet
-      if ($html.find('input[name="simulacrum.customSystemPrompt"]').length) {
+      if ($html.find(`input[name="${MODULE_ID}.customSystemPrompt"]`).length) {
         convertSettingToTextarea({
           html: $html,
-          moduleId: 'simulacrum',
+          moduleId: MODULE_ID,
           settingKey: 'customSystemPrompt',
           textareaStyle: style,
           repositionCallback: callback,
@@ -260,9 +261,9 @@ function _applyEnhancements(html) {
 
 function _addDiscordLink($html) {
   // Try both section and div for V12/V13 compatibility
-  let simulacrumTab = $html.find('section[data-tab="simulacrum"]');
+  let simulacrumTab = $html.find(`section[data-tab="${MODULE_ID}"]`);
   if (!simulacrumTab.length) {
-    simulacrumTab = $html.find('div[data-tab="simulacrum"]');
+    simulacrumTab = $html.find(`div[data-tab="${MODULE_ID}"]`);
   }
   if (!simulacrumTab.length) return;
 

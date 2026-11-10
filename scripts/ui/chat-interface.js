@@ -2,6 +2,7 @@ import { SimulacrumError } from '../utils/errors.js';
 import { ConversationCommands } from './conversation-commands.js';
 import { createLogger } from '../utils/logger.js';
 import { processMessageForDisplay } from './sidebar-state-syncer.js';
+import { MODULE_ID } from '../module-id.js';
 // Assuming SimulacrumCore will be the main entry point for AI processing
 // and will be defined later in simulacrum.js or a dedicated core file.
 // For now, we'll mock its existence or assume it's globally available in FoundryVTT context.
@@ -142,13 +143,13 @@ class ChatInterface {
    */
   static _onRenderChatMessage(message, html) {
     // Example: Add a specific class for AI-generated messages for styling
-    if (message.flags?.simulacrum?.aiGenerated) {
+    if (message.flags?.[MODULE_ID]?.aiGenerated) {
       html.addClass('simulacrum-ai-message');
     }
-    if (message.flags?.simulacrum?.userMessage) {
+    if (message.flags?.[MODULE_ID]?.userMessage) {
       html.addClass('simulacrum-user-message');
     }
-    if (message.flags?.simulacrum?.aiError) {
+    if (message.flags?.[MODULE_ID]?.aiError) {
       html.addClass('simulacrum-ai-error-message');
     }
   }

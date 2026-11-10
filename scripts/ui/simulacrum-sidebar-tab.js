@@ -18,6 +18,7 @@ import { formatPendingToolCall, formatToolCallDisplay } from '../utils/message-u
 import { emitProcessCancelled, SimulacrumHooks } from '../core/hook-manager.js';
 import { SequentialQueue } from '../utils/sequential-queue.js';
 import { SidebarMessageQueue } from './sidebar-message-queue.js';
+import { MODULE_ID, MODULE_PATH } from '../module-id.js';
 import {
   buildSpecPreviewContext,
   hydrateSpecPreview,
@@ -102,8 +103,8 @@ function loadModuleCssText() {
   if (moduleCssText !== null) return Promise.resolve(moduleCssText);
   if (!moduleCssFetch) {
     const href =
-      document.querySelector('link[rel="stylesheet"][href*="/modules/simulacrum/"]')?.href ??
-      'modules/simulacrum/styles/simulacrum.css';
+      document.querySelector(`link[rel="stylesheet"][href*="/${MODULE_PATH}/"]`)?.href ??
+      `${MODULE_PATH}/styles/simulacrum.css`;
     moduleCssFetch = fetch(href)
       .then(response => (response.ok ? response.text() : ''))
       .catch(() => '')
@@ -127,19 +128,19 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
 
   static PARTS = {
     taskTracker: {
-      template: 'modules/simulacrum/templates/simulacrum/sidebar-task-tracker.hbs',
+      template: `${MODULE_PATH}/templates/simulacrum/sidebar-task-tracker.hbs`,
     },
     log: {
-      template: 'modules/simulacrum/templates/simulacrum/sidebar-log.hbs',
+      template: `${MODULE_PATH}/templates/simulacrum/sidebar-log.hbs`,
       templates: [
-        'modules/simulacrum/templates/simulacrum/message.hbs',
-        'modules/simulacrum/templates/simulacrum/sidebar-notifications.hbs',
-        'modules/simulacrum/templates/simulacrum/spec-preview.hbs',
+        `${MODULE_PATH}/templates/simulacrum/message.hbs`,
+        `${MODULE_PATH}/templates/simulacrum/sidebar-notifications.hbs`,
+        `${MODULE_PATH}/templates/simulacrum/spec-preview.hbs`,
       ],
       scrollable: [''],
     },
     input: {
-      template: 'modules/simulacrum/templates/simulacrum/sidebar-input.hbs',
+      template: `${MODULE_PATH}/templates/simulacrum/sidebar-input.hbs`,
     },
   };
 
@@ -613,8 +614,8 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
       processLabel,
       processIsRetrying: this.#isRetrying,
       disableInput: this._isSidebarInputDisabled(),
-      currentModel: game.settings.get('simulacrum', 'model') || '',
-      contextLimit: this._getFormattedContextLimit(game.settings.get('simulacrum', 'model')),
+      currentModel: game.settings.get(MODULE_ID, 'model') || '',
+      contextLimit: this._getFormattedContextLimit(game.settings.get(MODULE_ID, 'model')),
     };
   }
 
@@ -638,7 +639,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
     // modelService resolves the effective limit: a manual value saved for
     // this exact model wins over derived metadata, then derived, then the
     // stored value — so a refresh shows what the runtime actually uses (#184)
-    const storedLimit = game.settings.get('simulacrum', 'fallbackContextLimit');
+    const storedLimit = game.settings.get(MODULE_ID, 'fallbackContextLimit');
     const { limit } = modelService.getContextLimit(modelId, storedLimit);
     return this._formatLimitValue(limit);
   }
@@ -685,10 +686,10 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
    * @param {string} model - The model ID to save
    */
   async _saveModelSelection(model) {
-    const currentModel = game.settings.get('simulacrum', 'model');
+    const currentModel = game.settings.get(MODULE_ID, 'model');
     if (model && model !== currentModel) {
       try {
-        await game.settings.set('simulacrum', 'model', model);
+        await game.settings.set(MODULE_ID, 'model', model);
         this.logger.info(`Model changed to: ${model}`);
 
         // CRITICAL: Explicitly reinitialize AI client here to avoid race condition.
@@ -1027,7 +1028,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
     };
     this.messages.push(msg);
 
-    const templatePath = 'modules/simulacrum/templates/simulacrum/message.hbs';
+    const templatePath = `${MODULE_PATH}/templates/simulacrum/message.hbs`;
     const html = await foundry.applications.handlebars.renderTemplate(templatePath, msg);
 
     const chatScroll =
@@ -1323,7 +1324,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
     const { toolName, toolCallId, displayName, explainerText, justification, toolArgs } = data;
 
     // Render the confirmation template
-    const templatePath = 'modules/simulacrum/templates/simulacrum/tool-confirmation.hbs';
+    const templatePath = `${MODULE_PATH}/templates/simulacrum/tool-confirmation.hbs`;
     const html = await foundry.applications.handlebars.renderTemplate(templatePath, {
       toolName,
       toolCallId,
@@ -1393,7 +1394,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
     let html;
     try {
       html = await foundry.applications.handlebars.renderTemplate(
-        'modules/simulacrum/templates/simulacrum/spec-preview.hbs',
+        `${MODULE_PATH}/templates/simulacrum/spec-preview.hbs`,
         buildSpecPreviewContext(preview)
       );
     } catch (err) {
@@ -1793,19 +1794,19 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
     if (limit) {
       // Update fallback setting and associate it with the current model so
       // the manual value takes precedence over derived metadata on refresh (#184)
-      const prevLimit = game.settings.get('simulacrum', 'fallbackContextLimit');
-      await game.settings.set('simulacrum', 'fallbackContextLimit', limit);
+      const prevLimit = game.settings.get(MODULE_ID, 'fallbackContextLimit');
+      await game.settings.set(MODULE_ID, 'fallbackContextLimit', limit);
       try {
         await game.settings.set(
-          'simulacrum',
+          MODULE_ID,
           'contextLimitModel',
-          game.settings.get('simulacrum', 'model') || ''
+          game.settings.get(MODULE_ID, 'model') || ''
         );
       } catch (err) {
         // Keep the pair consistent: if the association write fails, restore
         // the previous limit so the manual value cannot stick to the wrong
         // model
-        await game.settings.set('simulacrum', 'fallbackContextLimit', prevLimit);
+        await game.settings.set(MODULE_ID, 'fallbackContextLimit', prevLimit);
         throw err;
       }
       this.logger.info(`Context limit updated to: ${limit}`);
@@ -1819,7 +1820,7 @@ export class SimulacrumSidebarTab extends HandlebarsApplicationMixin(AbstractSid
    */
   _filterAndShowDropdown(input, dropdown) {
     const query = input.value.toLowerCase();
-    const currentModel = game.settings.get('simulacrum', 'model');
+    const currentModel = game.settings.get(MODULE_ID, 'model');
 
     // Filter models
     const filtered = query

@@ -26,6 +26,7 @@
 import { BaseTool } from './base-tool.js';
 import { deriveIdentifier } from '../core/automation-spec.js';
 import { DEFAULT_ICON_MODEL, ICON_DIR, generateIcon } from '../core/icon-service.js';
+import { MODULE_ID } from '../module-id.js';
 
 const SCHEMA = {
   type: 'object',
@@ -60,7 +61,7 @@ export class GenerateIconTool extends BaseTool {
 
   /** @param {object} params */
   async getConfirmationDetails(params) {
-    const model = game.settings.get('simulacrum', 'iconModel') || DEFAULT_ICON_MODEL;
+    const model = game.settings.get(MODULE_ID, 'iconModel') || DEFAULT_ICON_MODEL;
     return {
       type: 'build',
       title: `Generate icon: ${params.subject ?? '?'}`,
@@ -109,7 +110,7 @@ export class GenerateIconTool extends BaseTool {
       };
     }
 
-    const apiKey = game.settings.get('simulacrum', 'apiKey');
+    const apiKey = game.settings.get(MODULE_ID, 'apiKey');
     if (!apiKey) {
       return {
         error: this._reject(
@@ -135,7 +136,7 @@ export class GenerateIconTool extends BaseTool {
       };
     }
 
-    const model = game.settings.get('simulacrum', 'iconModel') || DEFAULT_ICON_MODEL;
+    const model = game.settings.get(MODULE_ID, 'iconModel') || DEFAULT_ICON_MODEL;
     return { apiKey, model, subject, identifier: this._stem(params.identifier, subject) };
   }
 

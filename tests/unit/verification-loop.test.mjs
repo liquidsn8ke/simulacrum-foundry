@@ -13,6 +13,7 @@ import {
 
 import { ConfirmAbilityTool } from '../../scripts/tools/confirm-ability.js';
 import { ReadAbilityRunsTool } from '../../scripts/tools/read-ability-runs.js';
+import { MODULE_ID } from '../../scripts/module-id.js';
 
 /** An item that behaves enough like a Foundry document for this lifecycle. */
 function makeItem(name = 'Tanglefoot', system = {}) {
@@ -82,7 +83,7 @@ test('marking an item writes the intent alongside the mark', async () => {
 });
 
 test('the flag lives in this module scope, so it cannot collide', () => {
-  assert.equal(VERIFICATION_FLAG, 'simulacrum.verification');
+  assert.equal(VERIFICATION_FLAG, `${MODULE_ID}.verification`);
 });
 
 test('recording a run appends and updates the last timestamp', async () => {

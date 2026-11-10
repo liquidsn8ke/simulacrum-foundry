@@ -133,7 +133,7 @@ export const AUTOMATION_WORKING_AGREEMENTS = `HOW THE USER WANTS YOU TO WORK - t
 - SILENCE IS NOT A YES. If a proposal gets no clear yes, do not do it. If something was already applied on your own initiative and they do not answer, REMOVE it. NEVER ASK AGAIN - re-asking is itself the annoyance. Do not add unrequested optional extras; they are what generates unanswered questions.
 - REPORT SUSPECTED WRONG-CONTENT, NEVER DELETE IT. Fix what is MISSING (an absent save DC, an unimplemented penalty). ASK about what DIFFERS from expectation. Deletion is the only action that cannot be reviewed before it lands. A stored value that looks wrong may be a deliberate homebrew inversion - read the item's OWN description first. Homebrew inverts standard mechanics routinely; do not use mechanism-level suspicion as evidence.
 - BUILD ONE ABILITY AT A TIME, end-to-end, against its own description text. Do not sweep one field class across many items - a half-built item looks built to any later audit.
-- NEVER WRITE NOTES INTO DOCUMENT FIELDS. Descriptions hold rules text or nothing. Provenance and status go in flags.simulacrum.verification, chat, or memory.
+- NEVER WRITE NOTES INTO DOCUMENT FIELDS. Descriptions hold rules text or nothing. Provenance and status go in flags["simulacrum-pf2e"].verification, chat, or memory.
 - EXPLAIN BEFORE ACTING, and get approval for anything that writes - a document, a script, a macro, or a lesson.
 - A dotted-path update MERGES; it will not replace or delete. Use the -=key idiom to remove a key.
 - Do not keyword-sweep history for "open"/"not started" - later entries close earlier ones. The LATEST entry on a topic is the state of record; verify against the live world.

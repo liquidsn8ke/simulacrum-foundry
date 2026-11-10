@@ -22,7 +22,7 @@
 import { readZip, readZipText } from './lib/zip.mjs';
 
 const DEFAULT_MANIFEST =
-  'https://github.com/Ebonhawk3829/simulacrum-foundry/releases/latest/download/module.json';
+  'https://github.com/liquidsn8ke/simulacrum-foundry/releases/latest/download/module.json';
 
 /**
  * Parse argv.
@@ -189,10 +189,10 @@ async function main() {
   report.check(true, 'download URL served', `${(zip.length / 1024).toFixed(1)} KB`);
   checkArchive(report, zip, manifest);
 
+  // The PF2e build requires no modules (it detects installed ones at run time), so
+  // the check is that it targets the pf2e system, not that it lists dependencies.
   const systems = (manifest.relationships?.systems ?? []).map(s => s.id);
-  const required = (manifest.relationships?.requires ?? []).map(r => r.id);
-  report.check(systems.length > 0, 'declares a system', systems.join(', '));
-  report.check(required.length > 0, 'declares required modules', required.join(', '));
+  report.check(systems.includes('pf2e'), 'declares the pf2e system', systems.join(', '));
 
   process.exit(report.finish());
 }

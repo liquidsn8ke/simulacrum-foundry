@@ -9,6 +9,7 @@ import { SimulacrumCore } from './simulacrum-core.js';
 import { processToolCallLoop } from './tool-loop-handler.js';
 import { toolRegistry } from './tool-registry.js';
 import { appendEmptyContentCorrection, appendToolFailureCorrection } from './correction.js';
+import { MODULE_ID } from '../module-id.js';
 import {
   isToolCallFailure,
   emitProcessStatus,
@@ -109,7 +110,7 @@ class ConversationEngine {
     // With tools: delegate to tool loop (let the loop emit assistant/tool updates)
     // Note: tool-loop-handler now handles adding assistant messages with tool_calls
     const tools = toolRegistry.getToolSchemas();
-    const legacyMode = game?.settings?.get('simulacrum', 'legacyMode') ?? false;
+    const legacyMode = game?.settings?.get(MODULE_ID, 'legacyMode') ?? false;
     const currentToolSupport = !legacyMode;
 
     const finalResponse = await processToolCallLoop({

@@ -19,6 +19,7 @@ import {
 import { smartSliceMessages, formatToolCallDisplay } from '../utils/message-utils.js';
 import { processToolCallLoop } from './tool-loop-handler.js';
 import { emitProcessCancelled } from './hook-manager.js';
+import { MODULE_ID } from '../module-id.js';
 import {
   buildSystemPrompt,
   getDocumentTypesInfo as getDocTypesInfo,
@@ -99,7 +100,7 @@ class SimulacrumCore {
     const windowSettings = ['model', 'fallbackContextLimit', 'contextLimitModel'];
     Hooks.on('updateSetting', setting => {
       const [namespace, key] = String(setting?.key ?? '').split('.');
-      if (namespace !== 'simulacrum' || !windowSettings.includes(key)) return;
+      if (namespace !== MODULE_ID || !windowSettings.includes(key)) return;
       this.conversationManager?.setTokenLimit(modelService.resolveContextLimit());
     });
     // Attempt to load any previously saved conversation state
@@ -143,8 +144,8 @@ class SimulacrumCore {
    */
   static async initializeAIClient() {
     try {
-      const apiKey = game.settings.get('simulacrum', 'apiKey');
-      const model = game.settings.get('simulacrum', 'model');
+      const apiKey = game.settings.get(MODULE_ID, 'apiKey');
+      const model = game.settings.get(MODULE_ID, 'model');
 
       // Do not enforce API key at this layer. Some endpoints may not require it.
 
@@ -234,7 +235,7 @@ class SimulacrumCore {
       }
 
       // Get context length setting and limit conversation history
-      // const contextLength = game?.settings?.get('simulacrum', 'contextLength') || 20;
+      // const contextLength = game?.settings?.get(MODULE_ID, 'contextLength') || 20;
 
       // Get system prompt early so compaction can account for its token overhead
       const useCustomPrompt = !!options.systemPrompt;
@@ -251,7 +252,7 @@ class SimulacrumCore {
       const limitedMessages = messages;
 
       // Get AI response - use legacy mode setting to determine tool support
-      const legacyMode = game.settings.get('simulacrum', 'legacyMode');
+      const legacyMode = game.settings.get(MODULE_ID, 'legacyMode');
       const useNativeTools = !legacyMode;
       const sendTools = useNativeTools && tools ? tools : null;
 

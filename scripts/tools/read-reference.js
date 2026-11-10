@@ -31,6 +31,7 @@
 
 import { BaseTool } from './base-tool.js';
 import { markReferenceConsulted, recordReferenceRead } from '../core/reference-journal.js';
+import { MODULE_ID, MODULE_PATH } from '../module-id.js';
 
 /**
  * Documentation to look for inside an installed module, by module id.
@@ -199,7 +200,7 @@ export class ReadReferenceTool extends BaseTool {
    * Everything to probe, resolved once.
    *
    * `source` is the label the agent sees; `moduleId` is the directory on disk.
-   * They differ for this module, which sits under `simulacrum` but is reported as
+   * They differ for this module, which sits under MODULE_ID but is reported as
    * `module`, so the manifest lookup must not be built from the label.
    * @param {string} [source]
    * @returns {Array<{source: string, moduleId: string, route: string, isDir: boolean, label: string}>}
@@ -207,11 +208,11 @@ export class ReadReferenceTool extends BaseTool {
   _targets(source) {
     const out = [];
 
-    if (!source || source === 'module' || source === 'simulacrum') {
+    if (!source || source === 'module' || source === 'simulacrum' || source === MODULE_ID) {
       out.push({
         source: 'module',
-        moduleId: 'simulacrum',
-        route: 'modules/simulacrum/reference',
+        moduleId: MODULE_ID,
+        route: `${MODULE_PATH}/reference`,
         isDir: true,
         label: 'module',
       });
@@ -284,7 +285,7 @@ export class ReadReferenceTool extends BaseTool {
    * Names worth trying in a directory.
    *
    * The declared list first — this module names its own reference files in
-   * `module.json` under `flags.simulacrum.reference`, which is exact and needs no
+   * `module.json` under `flags[MODULE_ID].reference`, which is exact and needs no
    * guessing and no code change when a file is added. The module's own readme and
    * changelog come next, then a conventional list. A wrong guess costs one failed
    * request, so the fallback is cheap enough to keep.
@@ -297,7 +298,7 @@ export class ReadReferenceTool extends BaseTool {
     const manifest = await this._fetchJson(`modules/${target.moduleId}/module.json`);
 
     // An explicit declaration is authoritative, so it is used alone when present.
-    const declared = manifest?.flags?.simulacrum?.reference;
+    const declared = manifest?.flags?.[MODULE_ID]?.reference;
     if (Array.isArray(declared) && declared.length) {
       for (const entry of declared) {
         if (typeof entry !== 'string') continue;
@@ -500,7 +501,7 @@ export class ReadReferenceTool extends BaseTool {
     // spelling is kept for the path itself; only the prefix matches are lowered,
     // because the directory names on disk are lower-case by convention.
     const route = key.startsWith('module/')
-      ? `modules/simulacrum/reference/${wantedPath.replace(/^module\//i, '')}`
+      ? `${MODULE_PATH}/reference/${wantedPath.replace(/^module\//i, '')}`
       : wantedPath.includes('/')
         ? `modules/${wantedPath}`
         : wantedPath;
