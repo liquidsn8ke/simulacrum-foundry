@@ -26,6 +26,7 @@ import { emitProcessStatus, emitRetryStatus, SimulacrumHooks } from './hook-mana
 import { interactionLogger } from './interaction-logger.js';
 import { executeToolCalls, storeToolJustification } from './tool-execution.js';
 import { MODULE_ID } from '../module-id.js';
+import { recordTools } from './turn-timing.js';
 // Re-export for existing importers (chat-handler); the store lives in tool-execution.js.
 export { retrieveToolJustification } from './tool-execution.js';
 
@@ -331,7 +332,9 @@ async function _processLoopCycle(currentResponse, context, state) {
   // 4. Execute Tools - wrapped in try/catch to handle abort and maintain message parity
   let toolResults;
   try {
+    const toolsStartedAt = Date.now();
     toolResults = await executeToolCalls(currentResponse.toolCalls, context);
+    recordTools(currentResponse.toolCalls.length, Date.now() - toolsStartedAt);
   } catch (execError) {
     // If execution was aborted/cancelled after we added the assistant message with tool_calls,
     // we MUST add stub tool responses for ALL tool calls to maintain message parity.

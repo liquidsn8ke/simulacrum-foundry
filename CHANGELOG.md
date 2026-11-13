@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-11-12
+
+### Added
+
+- **Variant creatures in one call.** `pf2e_build_creature` takes `base` (an official creature's
+  name or uuid), `adjustment` (`weak` / `elite`, GM Core numbers baked in), `remove`, and only
+  what differs. The base keeps every official item and its automation; a spellcasting entry with
+  the base's name replaces it and its spells.
+- Gear: spell scrolls (`{scroll, rank}`, shaped like the pf2e sheet's own), plain loot
+  (`{custom, price, description, img}`), and `price` / `description` / `img` on copied gear.
+  A strike's `weapon` links it to that weapon, as on official NPCs.
+- `build_journal`: a journal entry and all its pages in one call, from light markdown or HTML,
+  or more pages added to an existing journal.
+- `pf2e_lookup` `queries[]`: many names in one call. Reading a creature returns a short summary
+  (stats and every item) instead of its raw data; `full: true` still returns everything.
+- Turn timing: after each reply a notification says how long it took, split into AI calls
+  and tool runs (setting **Show Turn Timing**, on by default; also logged to the console).
+
+### Changed
+
+- Faster turns: the instructions now aim for three rounds per creature (plan, build, report),
+  put independent tool calls in one response, skip name lookups and reference reading for
+  content the builders copy themselves, and no longer benchmark separately before building.
+- **API Request Delay** now defaults to 0 ms (was 500 ms before every AI request). A world that
+  saved 500 keeps it; set it to 0 in the module settings.
+
 ## [0.9.2] - 2026-11-10
 
 ### Changed
@@ -355,7 +381,7 @@ Raises the read and store limits, and fixes the reference defects the in-world a
 
 - **The expiry reference no longer contradicts itself.** Its §1 heading and a sentence claimed
   `flags.dae.specialDuration` "no longer drives anything"; §2 correctly says it is midi-qol's
-  field too. §1 now names the turn/rest values it *is* deprecated for and points at §2 for the
+  field too. §1 now names the turn/rest values it _is_ deprecated for and points at §2 for the
   rest, and the field guide's pointer to that file said the same wrong half and is corrected.
 - **Reference cross-references no longer point at findings that do not exist.** The `(B5)`,
   `(C1)`, `(D3)`-style labels carried over from the source notes are removed.
@@ -630,8 +656,8 @@ DAE ≥14.6.3). Both are fixes: no API, flag or vocabulary change, and the Found
   activity's duration (it inherits only when it has neither), an effect with neither now
   takes the activity's expiry event, and an Elapsed-Time effect with no duration takes
   the activity's duration. Recorded the expiry-migration refinements (`combatEnd` yields
-  the single expiry slot), the *Round End* off-by-one fix, the *Expiry Mode* fix under
-  *Mark Expired*, and the `hasExpiry`/`hasDuration` corrections.
+  the single expiry slot), the _Round End_ off-by-one fix, the _Expiry Mode_ fix under
+  _Mark Expired_, and the `hasExpiry`/`hasDuration` corrections.
 - **`reference/dnd5e-6.0-fields.md`:** noted that midi 14.6.3 shipped the auto-fail/
   success roll fields with three check-activity bugs, all fixed in 14.6.4 (a Stealth
   check ignoring `system.skills.ste.roll.success`, a multi-skill check rolling the first

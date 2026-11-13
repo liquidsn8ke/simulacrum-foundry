@@ -12,7 +12,8 @@
 import { BaseTool } from './base-tool.js';
 import { MODULE_ID } from '../module-id.js';
 import { buildCreatureData, checkCreatureSpec } from '../core/pf2e/npc-builder.js';
-import { createLookup } from '../core/pf2e/compendium.js';
+import { createLookup, searchCompendia, nameKey } from '../core/pf2e/compendium.js';
+import { buildVariantData, checkVariantSpec } from '../core/pf2e/variant-builder.js';
 import { ensureFolder, resolvePack, describePlacement } from '../core/pf2e/placement.js';
 import { validateDocument } from '../core/pf2e/validate.js';
 import { officialDistributions, compareToOfficial, statsOfActor } from '../core/pf2e/benchmark.js';
@@ -36,7 +37,11 @@ export class Pf2eBuildCreatureTool extends BaseTool {
         'glossary[] (official ability names, e.g. "Grab", "Reactive Strike", or {name, aura, dc, description, rename, traits, rules}),',
         'actions[] {name, actions: 1|2|3|"free"|"reaction"|"passive", category, traits[], frequency {max, per}, description (plain lines starting Trigger/Requirements/Frequency/Effect are formatted, or HTML), rules[], aura, auraTraits[], slug},',
         'omitTroopAbilities[], publicNotes, privateNotes, blurb.',
-        'A "troop" trait adds thresholds, Troop Defenses, Troop Movement and Form Up automatically. See read_reference pf2e-npc-fields.md and pf2e-automation-patterns.md.',
+        'gear also takes {scroll: "Spell Name", rank} for a spell scroll and {custom: "Lockbox Key", price: {gp: 5}, description, img} for plain loot; a strike may name "weapon" (a gear item) to link to it.',
+        'Names are resolved against the compendia by the builder itself, and any miss comes back as a warning, so you do not need to look names up first.',
+        'A "troop" trait adds thresholds, Troop Defenses, Troop Movement and Form Up automatically.',
+        'VARIANTS ("Variant weak zealot of Asmodeus"): spec {base: official creature name or uuid, adjustment: "weak"|"elite", remove: [item names on the base to drop], name, and only what differs: gear[], strikes[], spellcasting[] (an entry with the same name as the base one replaces it and its spells), glossary[], actions[], lore{}, printed overrides level, hp, ac, acDetails, saves{}, perception{mod, senses}, skills{}, abilities{}, traits[], speed, languages[], img, token, blurb, publicNotes, privateNotes, set {"dotted.path": value}}.',
+        'The adjustment is applied to the base only; everything you list is taken as printed. The base keeps all its official items and automation. Read the base with pf2e_lookup read (a short summary) to see its item names for remove.',
       ].join(' ')
     );
     this.requiresConfirmation = true;
@@ -79,6 +84,13 @@ export class Pf2eBuildCreatureTool extends BaseTool {
   async getConfirmationDetails(params) {
     const s = params.spec ?? {};
     const count = a => (Array.isArray(a) ? a.length : 0);
+    if (s.base) {
+      return {
+        type: 'build',
+        title: `Build variant: ${s.name ?? s.base}`,
+        details: `${s.adjustment ?? 'unadjusted'} ${s.base}; removes ${count(s.remove)}, adds ${count(s.gear)} gear, ${count(s.strikes)} strikes, ${count(s.spellcasting)} spellcasting entries, ${count(s.actions) + count(s.glossary)} abilities.`,
+      };
+    }
     const spells = (s.spellcasting ?? []).reduce((n, e) => n + count(e.spells), 0);
     const where = params.actorUuid
       ? `rebuild ${params.actorUuid}`
@@ -102,7 +114,8 @@ export class Pf2eBuildCreatureTool extends BaseTool {
         'PERMISSION_DENIED'
       );
     const spec = params.spec;
-    const errors = checkCreatureSpec(spec);
+    const isVariant = !!spec?.base;
+    const errors = isVariant ? checkVariantSpec(spec) : checkCreatureSpec(spec);
     if (errors.length)
       return this._reject(
         { ok: false, errors, next: 'Fix these and call again.' },
@@ -110,9 +123,28 @@ export class Pf2eBuildCreatureTool extends BaseTool {
         'VALIDATION_ERROR'
       );
 
-    const { actor: data, warnings } = await buildCreatureData(spec, createLookup(), {
-      moduleId: MODULE_ID,
-    });
+    let built;
+    if (isVariant) {
+      const base = await this._resolveBase(spec.base);
+      if (!base) {
+        return this._reject(
+          {
+            ok: false,
+            error: `No official creature found for base "${spec.base}".`,
+            next: 'Use pf2e_lookup with type "npc" to find its exact name or uuid.',
+          },
+          'Base not found',
+          'VALIDATION_ERROR'
+        );
+      }
+      built = await buildVariantData(spec, base.data, createLookup(), {
+        moduleId: MODULE_ID,
+        baseUuid: base.uuid,
+      });
+    } else {
+      built = await buildCreatureData(spec, createLookup(), { moduleId: MODULE_ID });
+    }
+    const { actor: data, warnings } = built;
 
     let actor;
     try {
@@ -139,7 +171,7 @@ export class Pf2eBuildCreatureTool extends BaseTool {
     let benchmark;
     if (params.benchmark !== false) {
       try {
-        const official = await officialDistributions(Number(spec.level));
+        const official = await officialDistributions(Number(actor.system.details.level.value));
         benchmark = compareToOfficial(statsOfActor(actor), official).filter(
           c => c.rating !== 'moderate (typical)'
         );
@@ -156,6 +188,7 @@ export class Pf2eBuildCreatureTool extends BaseTool {
       name: actor.name,
       placed: describePlacement(actor),
       items: counts,
+      ...(isVariant ? { variantOf: spec.base, removedFromBase: built.removed } : {}),
       warnings,
       validation: validation.problems,
       benchmarkOutliers: benchmark,
@@ -167,6 +200,17 @@ export class Pf2eBuildCreatureTool extends BaseTool {
       content: JSON.stringify(body, null, 2),
       display: `**Built:** @UUID[${actor.uuid}]{${actor.name}} — ${actor.items.size} items${validation.ok ? '' : `, ${validation.problems.length} problem(s)`}`,
     };
+  }
+
+  /** The official creature a variant starts from, as source data. */
+  async _resolveBase(base) {
+    let uuid = /^(Compendium|Actor)\./.test(base) ? base : null;
+    if (!uuid) {
+      const hits = await searchCompendia({ query: base, type: 'npc', limit: 5 });
+      uuid = hits.find(h => nameKey(h.name) === nameKey(base))?.uuid ?? null;
+    }
+    const doc = uuid ? await globalThis.fromUuid(uuid).catch(() => null) : null;
+    return doc?.documentName === 'Actor' ? { uuid, data: doc.toObject() } : null;
   }
 
   async _create(data, params) {

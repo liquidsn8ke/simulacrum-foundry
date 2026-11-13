@@ -37,6 +37,7 @@ import { Pf2eBuildCreatureTool } from '../tools/pf2e-build-creature.js';
 import { Pf2eBuildItemTool } from '../tools/pf2e-build-item.js';
 import { Pf2eValidateTool } from '../tools/pf2e-validate.js';
 import { Pf2eBenchmarkTool } from '../tools/pf2e-benchmark.js';
+import { BuildJournalTool } from '../tools/build-journal.js';
 import { DocumentAPI } from './document-api.js';
 
 /**
@@ -109,6 +110,7 @@ export class ToolRegistry {
         new Pf2eBuildItemTool(),
         new Pf2eValidateTool(),
         new Pf2eBenchmarkTool(),
+        new BuildJournalTool(),
       ];
 
       for (const t of tools) {

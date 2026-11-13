@@ -15,7 +15,10 @@
  */
 
 import { randomID, slugify, toHTML, clone } from './text.js';
-import { PF2E_PACKS } from './compendium.js';
+import { PF2E_PACKS, nameKey } from './compendium.js';
+import { buildGear } from './gear-builder.js';
+
+export { buildGear };
 
 const SIZES = {
   tiny: 'tiny',
@@ -231,34 +234,6 @@ async function buildGlossary(entry, lookup, nextSort, warnings) {
   return doc;
 }
 
-/** Copy a piece of gear from the equipment compendium and equip it. */
-async function buildGear(entry, lookup, nextSort, warnings) {
-  const spec = typeof entry === 'string' ? { name: entry } : entry;
-  const doc = spec.uuid
-    ? await lookup.byUuid(spec.uuid)
-    : await lookup([PF2E_PACKS.equipment], spec.name);
-  if (!doc) {
-    warnings.push(`Equipment "${spec.name ?? spec.uuid}" was not found; it was skipped.`);
-    return null;
-  }
-  if (spec.quantity) doc.system.quantity = spec.quantity;
-  if (spec.rename) doc.name = spec.rename;
-  if (spec.runes && doc.system.runes) Object.assign(doc.system.runes, spec.runes);
-  const held = ['weapon', 'shield'].includes(doc.type) && spec.held !== false;
-  if (doc.system.equipped) {
-    doc.system.equipped.carryType = held ? 'held' : 'worn';
-    doc.system.equipped.handsHeld = held
-      ? /held-in-two/.test(doc.system.usage?.value ?? '')
-        ? 2
-        : 1
-      : 0;
-    if (doc.type === 'armor') doc.system.equipped.inSlot = true;
-    if ((doc.system.traits?.value ?? []).includes('invested')) doc.system.equipped.invested = true;
-  }
-  doc.sort = nextSort();
-  return doc;
-}
-
 /** A spellcasting entry and its spells. */
 async function buildSpellcasting(sc, { lookup, nextSort, resources, warnings }) {
   const type = sc.type;
@@ -374,35 +349,39 @@ export function checkCreatureSpec(spec) {
 }
 
 /**
- * Build NPC actor data from a spec.
- * @param {object} spec - see reference/pf2e-builder-specs.md
- * @param {Function} lookup - async (packKeys, name, type?) => item data | null; with lookup.byUuid(uuid)
- * @param {object} [options]
- * @param {string} [options.moduleId] - Flag scope for storing the spec
- * @returns {Promise<{actor: object, warnings: string[]}>}
+ * Build the embedded items a spec lists: gear, strikes (a strike's `weapon` links it to
+ * that weapon, like official NPCs), spellcasting, troop abilities, glossary abilities,
+ * actions and lore. Shared by full builds and variants.
+ * @param {object} spec
+ * @param {object} ctx - {lookup, nextSort, warnings, resources, troopThresholds?, existing?: items already on the actor}
+ * @returns {Promise<object[]>}
  */
-export async function buildCreatureData(spec, lookup, { moduleId = 'simulacrum-pf2e' } = {}) {
-  let sort = 0;
-  const nextSort = () => (sort += 100000);
-  const warnings = [];
+export async function buildSpecItems(spec, ctx) {
+  const { lookup, nextSort, warnings, resources, troopThresholds = '', existing = [] } = ctx;
   const items = [];
-  const resources = {};
 
   for (const g of spec.gear ?? []) {
     const doc = await buildGear(g, lookup, nextSort, warnings);
     if (doc) items.push(doc);
   }
-  for (const s of spec.strikes ?? []) items.push(buildStrike(s, nextSort));
+  for (const s of spec.strikes ?? []) {
+    const strike = buildStrike(s, nextSort);
+    if (s.weapon) {
+      const want = nameKey(s.weapon);
+      const weapon = [...items, ...existing].find(
+        i => i.type === 'weapon' && nameKey(i.name) === want
+      );
+      if (weapon) strike.flags = { pf2e: { linkedWeapon: weapon._id } };
+      else
+        warnings.push(`Strike "${s.name}": no weapon named "${s.weapon}" to link; left unlinked.`);
+    }
+    items.push(strike);
+  }
   for (const sc of spec.spellcasting ?? []) {
     items.push(...(await buildSpellcasting(sc, { lookup, nextSort, resources, warnings })));
   }
 
-  const traits = spec.traits ?? [];
-  const isTroop = traits.includes('troop');
-  const hp = Number(spec.hp);
-  let troopThresholds = '';
-  if (isTroop) {
-    troopThresholds = `Thresholds ${Math.floor((hp * 2) / 3)} (3 segments), ${Math.floor(hp / 3)} (2 segments)`;
+  if (troopThresholds) {
     const omit = new Set((spec.omitTroopAbilities ?? []).map(s => s.toLowerCase()));
     const listed = new Set(
       (spec.glossary ?? []).map(g => (typeof g === 'string' ? g : g.name).toLowerCase())
@@ -427,11 +406,18 @@ export async function buildCreatureData(spec, lookup, { moduleId = 'simulacrum-p
   for (const a of spec.actions ?? []) items.push(buildAction(a, nextSort));
   for (const [name, mod] of Object.entries(spec.lore ?? {}))
     items.push(buildLore(name, mod, nextSort));
+  return items;
+}
 
-  // Strike on-hit effects must name abilities the creature actually has.
+/**
+ * Strike on-hit effects must name abilities the creature actually has.
+ * @param {object[]} items
+ * @param {string[]} warnings
+ */
+export function checkStrikeEffects(items, warnings) {
   const slugs = new Set(items.map(i => i.system?.slug).filter(Boolean));
   for (const strike of items.filter(i => i.type === 'melee')) {
-    for (const effect of strike.system.attackEffects.value) {
+    for (const effect of strike.system.attackEffects?.value ?? []) {
       if (!slugs.has(effect)) {
         warnings.push(
           `Strike "${strike.name}" lists on-hit effect "${effect}", but no ability with that slug is on the creature. Add it (e.g. glossary "Grab") or fix the slug.`
@@ -439,6 +425,35 @@ export async function buildCreatureData(spec, lookup, { moduleId = 'simulacrum-p
       }
     }
   }
+}
+
+/**
+ * Build NPC actor data from a spec.
+ * @param {object} spec - see reference/pf2e-npc-fields.md
+ * @param {Function} lookup - async (packKeys, name, type?) => item data | null; with lookup.byUuid(uuid)
+ * @param {object} [options]
+ * @param {string} [options.moduleId] - Flag scope for storing the spec
+ * @returns {Promise<{actor: object, warnings: string[]}>}
+ */
+export async function buildCreatureData(spec, lookup, { moduleId = 'simulacrum-pf2e' } = {}) {
+  let sort = 0;
+  const nextSort = () => (sort += 100000);
+  const warnings = [];
+  const resources = {};
+  const traits = spec.traits ?? [];
+  const isTroop = traits.includes('troop');
+  const hp = Number(spec.hp);
+  const troopThresholds = isTroop
+    ? `Thresholds ${Math.floor((hp * 2) / 3)} (3 segments), ${Math.floor(hp / 3)} (2 segments)`
+    : '';
+  const items = await buildSpecItems(spec, {
+    lookup,
+    nextSort,
+    warnings,
+    resources,
+    troopThresholds,
+  });
+  checkStrikeEffects(items, warnings);
 
   const abilities = {};
   for (const k of ABILITY_KEYS) abilities[k] = { mod: Number(spec.abilities?.[k] ?? 0) };

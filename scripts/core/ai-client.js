@@ -22,6 +22,7 @@ import {
 } from '../utils/retry-helpers.js';
 import { DEFAULT_CONTEXT_LIMIT, modelService } from './model-service.js';
 import { MODULE_ID } from '../module-id.js';
+import { recordAI } from './turn-timing.js';
 import {
   buildAnthropicRequest,
   fromAnthropicResponse,
@@ -328,6 +329,16 @@ export class AIClient {
    * @returns {Promise<Object>} AI response
    */
   async chat(messages, tools = null, options = {}) {
+    const startedAt = Date.now();
+    try {
+      return await this._chatOnce(messages, tools, options);
+    } finally {
+      recordAI(Date.now() - startedAt);
+    }
+  }
+
+  /** One request to the configured provider (timed by chat()). */
+  async _chatOnce(messages, tools = null, options = {}) {
     // Task-14: Apply request delay to prevent rate limiting
     await this._applyRequestDelay();
 

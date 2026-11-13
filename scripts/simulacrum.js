@@ -307,13 +307,22 @@ function registerAPISettings() {
 
   // tokenLimit setting removed - consolidated to fallbackContextLimit (managed via sidebar context input)
 
+  game.settings.register(MODULE_ID, 'showTurnTiming', {
+    name: 'Show Turn Timing',
+    hint: 'After each reply, show how long it took: AI calls, tool runs and the total. Useful for spotting slow models or turns that take many rounds.',
+    scope: 'client',
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register(MODULE_ID, 'apiRequestDelay', {
     name: 'API Request Delay',
-    hint: 'Delay in milliseconds between API requests to prevent rate limiting (default 500ms).',
+    hint: 'Delay in milliseconds between API requests to prevent rate limiting (default 0: only raise it if your provider rate-limits you).',
     scope: 'world',
     config: true,
     type: Number,
-    default: 500,
+    default: 0,
     restricted: true,
   });
 

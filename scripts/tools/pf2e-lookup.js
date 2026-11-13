@@ -44,10 +44,20 @@ export class Pf2eLookupTool extends BaseTool {
           description: 'Traits every result must have.',
         },
         limit: { type: 'number', description: 'Maximum results (default 10).' },
+        queries: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Several names in ONE call (e.g. every spell in a stat block). Returns the top matches for each; the type/packs filters apply to all.',
+        },
         read: {
           type: 'string',
           description:
-            'A UUID to read in full instead of searching. Returns the document data (system, rules, embedded items).',
+            'A UUID to read instead of searching. Items come back in full (system, rules). Creatures come back as a short summary (stats and every item by name, type and key numbers) unless full is true.',
+        },
+        full: {
+          type: 'boolean',
+          description: 'With read on a creature: return the complete data instead of the summary.',
         },
       },
     };
@@ -58,7 +68,8 @@ export class Pf2eLookupTool extends BaseTool {
   }
 
   async execute(params) {
-    if (params.read) return this._read(params.read);
+    if (params.read) return this._read(params.read, params.full === true);
+    if (Array.isArray(params.queries) && params.queries.length) return this._batch(params);
     if (!params.query) {
       return this._result(
         { ok: false, error: 'Give a query to search, or read: <uuid> to read one document.' },
@@ -90,10 +101,98 @@ export class Pf2eLookupTool extends BaseTool {
     return this._result(body, `**Lookup:** "${params.query}" — ${results.length} found`);
   }
 
-  async _read(uuid) {
+  async _batch(params) {
+    const limit = Number.isFinite(params.limit) && params.limit > 0 ? params.limit : 3;
+    const found = {};
+    const missing = [];
+    for (const query of params.queries.slice(0, 60)) {
+      const results = await searchCompendia({
+        query,
+        type: params.type,
+        packs: params.packs,
+        level: Number.isFinite(params.level) ? params.level : undefined,
+        traits: params.traits,
+        limit,
+      });
+      if (results.length) {
+        found[query] = results.map(r => ({
+          uuid: r.uuid,
+          name: r.name,
+          type: r.type,
+          level: r.level,
+          pack: r.pack,
+        }));
+      } else missing.push(query);
+    }
+    const body = {
+      ok: true,
+      found,
+      missing,
+      next: missing.length
+        ? 'Missing names: try a shorter name or no type filter, or ask the GM if it is homebrew.'
+        : 'Use these uuids in @UUID[...] links or pass names straight to the builders.',
+    };
+    return this._result(
+      body,
+      `**Lookup:** ${params.queries.length} names — ${params.queries.length - missing.length} found`
+    );
+  }
+
+  /** A creature in a few hundred tokens: its numbers and every item by name and key values. */
+  _summarizeActor(doc) {
+    const s = doc.system ?? {};
+    const items = [...doc.items].map(i => {
+      const sys = i.system ?? {};
+      const entry = { name: i.name, type: i.type };
+      if (i.type === 'melee') {
+        entry.bonus = sys.bonus?.value;
+        entry.damage = Object.values(sys.damageRolls ?? {}).map(
+          r => `${r.damage} ${r.damageType}${r.category ? ` (${r.category})` : ''}`
+        );
+        entry.traits = sys.traits?.value;
+      } else if (i.type === 'action') {
+        entry.actions =
+          sys.actionType?.value === 'action' ? sys.actions?.value : sys.actionType?.value;
+        if (sys.rules?.length) entry.rules = sys.rules.map(r => r.key);
+      } else if (i.type === 'spellcastingEntry') {
+        entry.dc = sys.spelldc?.dc;
+        entry.attack = sys.spelldc?.value;
+        entry.kind = `${sys.tradition?.value} ${sys.prepared?.value}`;
+      } else if (i.type === 'spell') {
+        entry.rank = sys.location?.heightenedLevel ?? sys.level?.value;
+      }
+      return entry;
+    });
+    return {
+      level: s.details?.level?.value,
+      traits: s.traits?.value,
+      size: s.traits?.size?.value,
+      hp: s.attributes?.hp?.max,
+      ac: s.attributes?.ac?.value,
+      acDetails: s.attributes?.ac?.details || undefined,
+      saves: Object.fromEntries(Object.entries(s.saves ?? {}).map(([k, v]) => [k, v.value])),
+      perception: s.perception?.mod,
+      skills: Object.fromEntries(Object.entries(s.skills ?? {}).map(([k, v]) => [k, v.base])),
+      speed: s.attributes?.speed?.value,
+      items,
+    };
+  }
+
+  async _read(uuid, full = false) {
     const doc = await globalThis.fromUuid(uuid).catch(() => null);
     if (!doc)
       return this._result({ ok: false, error: `Nothing found at ${uuid}.` }, 'Not found', true);
+    if (doc.documentName === 'Actor' && !full) {
+      const body = {
+        ok: true,
+        uuid,
+        name: doc.name,
+        type: doc.type,
+        summary: this._summarizeActor(doc),
+        next: 'For a variant, pass this uuid as spec.base to pf2e_build_creature and list only what differs. Read with full: true only if you need its raw data.',
+      };
+      return this._result(body, `**Read:** ${doc.name} (summary)`);
+    }
     const data = doc.toObject();
     delete data._stats;
     delete data.ownership;

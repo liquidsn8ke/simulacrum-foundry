@@ -10,6 +10,20 @@ import { processToolCallLoop } from './tool-loop-handler.js';
 import { toolRegistry } from './tool-registry.js';
 import { appendEmptyContentCorrection, appendToolFailureCorrection } from './correction.js';
 import { MODULE_ID } from '../module-id.js';
+import { startTurn, finishTurn } from './turn-timing.js';
+
+/** Log a finished turn's timing, and show it to the GM unless they turned that off. */
+function reportTurnTiming(timing) {
+  if (!timing) return;
+  console.info(`Simulacrum | ${timing.text}`, timing);
+  let show = true;
+  try {
+    show = game.settings.get(MODULE_ID, 'showTurnTiming') !== false;
+  } catch {
+    // setting not registered (tests)
+  }
+  if (show) globalThis.ui?.notifications?.info(`Simulacrum: ${timing.text}`);
+}
 import {
   isToolCallFailure,
   emitProcessStatus,
@@ -38,6 +52,16 @@ class ConversationEngine {
    * @returns {Promise<object>} final assistant response
    */
   async processTurn(options = {}) {
+    startTurn();
+    try {
+      return await this._processTurn(options);
+    } finally {
+      reportTurnTiming(finishTurn());
+    }
+  }
+
+  /** One GM turn: the first reply, corrections, then the tool loop. */
+  async _processTurn(options = {}) {
     const { signal, onAssistantMessage, onToolResult } = options;
 
     // Get initial assistant response
